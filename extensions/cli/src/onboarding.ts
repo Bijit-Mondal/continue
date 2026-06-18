@@ -5,7 +5,6 @@ import chalk from "chalk";
 import { continueProviderToModelsDevProvider } from "core/llm/modelsDevBlockTemplate.js";
 import { setConfigFilePermissions } from "core/util/paths.js";
 
-import type { AuthConfig } from "./auth/workos.js";
 import { getApiClient } from "./config.js";
 import { loadConfiguration } from "./configLoader.js";
 import { env } from "./env.js";
@@ -165,21 +164,12 @@ export async function markOnboardingComplete(): Promise<void> {
   fs.writeFileSync(flagPath, new Date().toISOString());
 }
 
-export async function initializeWithOnboarding(
-  authConfig: AuthConfig,
-  configPath: string | undefined,
-) {
+export async function initializeWithOnboarding(configPath: string | undefined) {
   const firstTime = await isFirstTime();
 
   if (configPath !== undefined) {
     try {
-      await loadConfiguration(
-        authConfig,
-        configPath,
-        getApiClient(undefined),
-        [],
-        false,
-      );
+      await loadConfiguration(configPath, getApiClient(undefined), [], false);
     } catch (errorMessage) {
       throw new Error(
         `Failed to load config from "${configPath}": ${errorMessage}`,

@@ -5,9 +5,9 @@ import * as path from "path";
 import { AssistantUnrolled, ModelConfig } from "@continuedev/config-yaml";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-import { getModelName, updateModelName } from "../auth/workos.js";
 import * as config from "../config.js";
 import { ModelService } from "../services/ModelService.js";
+import { getModelName, updateModelName } from "../util/modelPersistence.js";
 import {
   getPersistedModelName,
   persistModelName,
@@ -90,20 +90,20 @@ describe("Model Persistence (Hub auth removed)", () => {
     expect(persistedModel).toBe("Claude 3.5 Sonnet");
 
     // Verify getModelName returns it for null config
-    expect(getModelName(null)).toBe("Claude 3.5 Sonnet");
+    expect(getModelName()).toBe("Claude 3.5 Sonnet");
   });
 
   test("should restore model selection on next session", async () => {
     // Session 1: User switches model
     const modelService = new ModelService();
-    await modelService.initialize(mockAssistant, null);
+    await modelService.initialize(mockAssistant);
 
     await modelService.switchModel(1);
     updateModelName("Claude 3.5 Sonnet");
 
     // Session 2: User reopens CLI
     const newModelService = new ModelService();
-    const state = await newModelService.initialize(mockAssistant, null);
+    const state = await newModelService.initialize(mockAssistant);
 
     // Should restore Claude 3.5 Sonnet
     expect(state.model?.name).toBe("Claude 3.5 Sonnet");
@@ -115,15 +115,15 @@ describe("Model Persistence (Hub auth removed)", () => {
     updateModelName("GPT-4");
     updateModelName("Claude 3.5 Sonnet");
     updateModelName("Claude 3 Opus");
-    expect(getModelName(null)).toBe("Claude 3 Opus");
+    expect(getModelName()).toBe("Claude 3 Opus");
   });
 
   test("should clear model selection when set to null", () => {
     updateModelName("Claude 3.5 Sonnet");
-    expect(getModelName(null)).toBe("Claude 3.5 Sonnet");
+    expect(getModelName()).toBe("Claude 3.5 Sonnet");
 
     updateModelName(null);
-    expect(getModelName(null)).toBeNull();
+    expect(getModelName()).toBeNull();
   });
 
   test("should work across config changes", async () => {
@@ -131,7 +131,7 @@ describe("Model Persistence (Hub auth removed)", () => {
     updateModelName("Claude 3.5 Sonnet");
 
     const modelService = new ModelService();
-    let state = await modelService.initialize(mockAssistant, null);
+    let state = await modelService.initialize(mockAssistant);
     expect(state.model?.name).toBe("Claude 3.5 Sonnet");
 
     // User switches to a different model
@@ -140,7 +140,7 @@ describe("Model Persistence (Hub auth removed)", () => {
 
     // Create new service (simulating restart)
     const newModelService = new ModelService();
-    state = await newModelService.initialize(mockAssistant, null);
+    state = await newModelService.initialize(mockAssistant);
     expect(state.model?.name).toBe("Claude 3 Opus");
   });
 });

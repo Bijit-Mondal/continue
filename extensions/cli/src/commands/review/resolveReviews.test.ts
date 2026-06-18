@@ -5,11 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { resolveReviews } from "./resolveReviews.js";
 
-vi.mock("../../auth/workos.js", () => ({
-  loadAuthConfig: vi.fn(() => null),
-  getAccessToken: vi.fn(() => null),
-}));
-
 vi.mock("../../env.js", () => ({
   env: { apiBase: "https://api.tezz.dev" },
 }));

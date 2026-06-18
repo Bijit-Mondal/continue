@@ -12,12 +12,12 @@ import { handleInfoSlashCommand } from "./infoScreen.js";
 import { getCurrentSession, updateSessionTitle } from "./session.js";
 import { telemetryService } from "./telemetry/telemetryService.js";
 import { buildImportSkillPrompt } from "./tools/skills.js";
-import { resolveProviderArg } from "./util/modelsCatalog.js";
 import { SlashCommandResult } from "./ui/hooks/useChat.types.js";
 import {
   getSkillSlashCommandName,
   loadMarkdownSkills,
 } from "./util/loadMarkdownSkills.js";
+import { resolveProviderArg } from "./util/modelsCatalog.js";
 
 type CommandHandler = (
   args: string[],

@@ -42,7 +42,7 @@ export class MCPService
   private apiKeyCache: Map<string, string> = new Map();
 
   getDependencies(): string[] {
-    return [SERVICE_NAMES.CONFIG, SERVICE_NAMES.AUTH];
+    return [SERVICE_NAMES.CONFIG];
   }
   constructor() {
     super("MCPService", {

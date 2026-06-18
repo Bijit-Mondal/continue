@@ -12,7 +12,6 @@ export function resolveHref(path: string): string {
   // Cross-app links → absolute URLs
   if (path.startsWith("/blog"))
     return `https://blog.continue.dev${path.slice(5) || ""}`;
-  if (path === "/login") return "https://continue.dev/login";
   if (path === "/") return "https://continue.dev";
 
   // Everything else stays as-is

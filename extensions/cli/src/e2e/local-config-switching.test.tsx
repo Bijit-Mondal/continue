@@ -118,33 +118,11 @@ describe("Local Config Switching Investigation", () => {
     // 4. Some caching or memoization issue specific to file paths
   });
 
-  test("investigates assistant slug handling for local configs", async () => {
-    // When switching to a local config, we call updateAssistantSlug(null)
-    // When switching to a remote config, we call updateAssistantSlug(configPath)
-
-    const { updateAssistantSlug, getAssistantSlug } = await import(
-      "../auth/workos.js"
-    );
-
-    expect(typeof updateAssistantSlug).toBe("function");
-    expect(typeof getAssistantSlug).toBe("function");
-
-    // Question: Could the assistant slug clearing/setting be interfering
-    // with the config loading process?
-
-    // In loadConfiguration, when config is undefined, it checks for saved assistant slug:
-    // const assistantSlug = getAssistantSlug(authConfig);
-    // if (assistantSlug) { config = assistantSlug; }
-
-    // Potential issue: If we're switching TO a local config but the assistant slug
-    // is still set from a previous remote config, could that interfere?
-  });
-
   test("checks if ConfigService state management differs for local configs", async () => {
     const { ConfigService } = await import("../services/ConfigService.js");
 
     // The ConfigService.updateConfigPath method should work the same for both types:
-    // 1. Load new config via loadConfiguration(authConfig, newConfigPath, ...)
+    // 1. Load new config via loadConfiguration(newConfigPath, ...)
     // 2. Update this.currentState = { config, configPath: newConfigPath }
     // 3. Call serviceContainer.set(CONFIG, this.currentState)
     // 4. Call serviceContainer.reload(MODEL) and serviceContainer.reload(MCP)

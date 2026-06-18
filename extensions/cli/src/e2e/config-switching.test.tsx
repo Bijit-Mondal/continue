@@ -33,7 +33,6 @@ describe("Config Switching Implementation Test", () => {
     expect(SERVICE_NAMES.CONFIG).toBe("config");
     expect(SERVICE_NAMES.MODEL).toBe("model");
     expect(SERVICE_NAMES.MCP).toBe("mcp");
-    expect(SERVICE_NAMES.AUTH).toBe("auth");
     expect(SERVICE_NAMES.API_CLIENT).toBe("apiClient");
   });
 
@@ -58,16 +57,6 @@ describe("Config Switching Implementation Test", () => {
     expect(typeof configLoaderModule.loadConfiguration).toBe("function");
 
     // This is what ConfigService.updateConfigPath uses to load new configs
-  });
-
-  test("auth functions exist for assistant slug management", async () => {
-    const authModule = await import("../auth/workos.js");
-
-    // Verify auth functions exist for assistant slug handling
-    expect(typeof authModule.loadAuthConfig).toBe("function");
-    expect(typeof authModule.updateAssistantSlug).toBe("function");
-
-    // These are used by ConfigService.updateConfigPath for auth management
   });
 
   test("expected config switching flow is documented", () => {

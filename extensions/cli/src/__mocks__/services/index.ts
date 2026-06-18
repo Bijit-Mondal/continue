@@ -1,12 +1,6 @@
 import { vi } from "vitest";
 
 export const services = {
-  auth: {
-    login: vi.fn(() => Promise.resolve({})),
-    logout: vi.fn(() => Promise.resolve({})),
-    switchOrganization: vi.fn(() => Promise.resolve({})),
-    getAvailableOrganizations: vi.fn(() => Promise.resolve([])),
-  },
   toolPermissions: {
     isAllowed: vi.fn(() => Promise.resolve(true)),
     shouldAsk: vi.fn(() => Promise.resolve(false)),
@@ -24,7 +18,6 @@ export const services = {
 export const reloadService = vi.fn(() => Promise.resolve(undefined));
 
 export const SERVICE_NAMES = {
-  AUTH: "auth",
   CONFIG: "config",
   MODEL: "model",
   MCP: "mcp",

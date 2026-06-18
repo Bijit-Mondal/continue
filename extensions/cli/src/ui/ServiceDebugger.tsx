@@ -3,7 +3,6 @@ import React from "react";
 
 import {
   ApiClientServiceState,
-  AuthServiceState,
   ConfigServiceState,
   MCPServiceState,
   ModelServiceState,
@@ -13,7 +12,6 @@ import { defaultBoxStyles } from "./styles.js";
 
 interface ServiceDebuggerProps {
   services: {
-    auth?: AuthServiceState;
     config?: ConfigServiceState;
     model?: ModelServiceState;
     mcp?: MCPServiceState;
@@ -42,10 +40,6 @@ const ServiceDebugger: React.FC<ServiceDebuggerProps> = ({
 
   const getServiceDetails = (serviceName: string, service: any) => {
     switch (serviceName) {
-      case "auth":
-        return service?.authConfig
-          ? `User: ${service.authConfig.email || "unknown"}`
-          : "No auth config";
       case "config":
         return service?.config ? `Config: ${service.config.name}` : "No config";
       case "model":
@@ -82,7 +76,7 @@ const ServiceDebugger: React.FC<ServiceDebuggerProps> = ({
       <Text> </Text>
       <Text color="yellow">Individual Services:</Text>
 
-      {["auth", "config", "model", "mcp", "apiClient"].map((serviceName) => {
+      {["config", "model", "mcp", "apiClient"].map((serviceName) => {
         const service = services[serviceName as keyof typeof services];
         const status = getServiceStatus(serviceName, service);
         const details = getServiceDetails(serviceName, service);

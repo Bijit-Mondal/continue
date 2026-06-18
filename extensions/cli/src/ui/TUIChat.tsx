@@ -12,7 +12,6 @@ import { ToolPermissionServiceState } from "src/services/ToolPermissionService.j
 import { useServices } from "../hooks/useService.js";
 import {
   ApiClientServiceState,
-  AuthServiceState,
   ConfigServiceState,
   MCPServiceState,
   ModelServiceState,
@@ -88,31 +87,15 @@ function useTUIChatServices(remoteUrl?: string) {
   const isRemoteMode = useMemo(() => !!remoteUrl, [remoteUrl]);
 
   const { services, allReady: allServicesReady } = useServices<{
-    auth: AuthServiceState;
     config: ConfigServiceState;
     model: ModelServiceState;
     mcp: MCPServiceState;
     apiClient: ApiClientServiceState;
     update: UpdateServiceState;
     toolPermissions: ToolPermissionServiceState;
-  }>([
-    "auth",
-    "config",
-    "model",
-    "mcp",
-    "apiClient",
-    "update",
-    "toolPermissions",
-  ]);
+  }>(["config", "model", "mcp", "apiClient", "update", "toolPermissions"]);
 
   return { services, allServicesReady, isRemoteMode };
-}
-
-// Organization names are no longer available (Hub integration removed)
-function useOrganizationName(_organizationId?: string): string | undefined {
-  const organizationName = undefined;
-
-  return organizationName;
 }
 
 // Custom hook for chat handlers
@@ -375,9 +358,6 @@ const TUIChat: React.FC<TUIChatProps> = ({
   // State for image in clipboard status
   const [hasImageInClipboard, setHasImageInClipboard] = useState(false);
 
-  // Fetch organization name based on auth state
-  const organizationName = useOrganizationName(services.auth?.organizationId);
-
   // Track if a Bash tool is currently running via events
   const [isBashToolRunning, setIsBashToolRunning] = useState(false);
 
@@ -416,7 +396,6 @@ const TUIChat: React.FC<TUIChatProps> = ({
           config={services.config?.config || undefined}
           model={services.model?.model || undefined}
           mcpService={services.mcp?.mcpService || undefined}
-          organizationName={organizationName}
           chatHistory={chatHistory}
           queuedMessages={queuedMessages}
           renderMessage={renderMessage}

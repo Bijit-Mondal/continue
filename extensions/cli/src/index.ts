@@ -3,9 +3,10 @@
 // MUST be the first import - intercepts console/stdout/stderr before any dependencies load
 import "./init.js";
 
-import { Command } from "commander";
 import path from "path";
 import { fileURLToPath } from "url";
+
+import { Command } from "commander";
 
 import { chat } from "./commands/chat.js";
 import { checks } from "./commands/checks.js";

@@ -1040,10 +1040,6 @@ export class Core {
       }
     });
 
-    on("auth/getAuthUrl", async (_msg) => {
-      return { url: "" };
-    });
-
     on("tools/call", async ({ data: { toolCall } }) =>
       this.handleToolCall(toolCall),
     );

@@ -35,12 +35,6 @@ vi.mock("../config.js", () => ({
   getLlmApi: vi.fn(),
 }));
 
-// Mock auth module
-vi.mock("../auth/workos.js", () => ({
-  getModelName: vi.fn(),
-  loadAuthConfig: vi.fn(),
-}));
-
 // Mock the config-yaml package
 vi.mock("@continuedev/config-yaml", async (importOriginal) => {
   const actual =
@@ -107,10 +101,6 @@ describe("Agent file Integration Tests", () => {
     ],
   };
 
-  const mockAuthConfig = {
-    apiKey: "test-key",
-  };
-
   beforeEach(async () => {
     vi.clearAllMocks();
 
@@ -161,17 +151,9 @@ describe("Agent file Integration Tests", () => {
       mockLoadPackageFromHub.mockResolvedValue(mockAgentFile);
 
       // Mock the required service states
-      const authServiceState = {
-        authConfig: mockAuthConfig,
-        isAuthenticated: true,
-      };
       const apiClientState = { apiClient: { mock: "apiClient" } };
 
-      await agentFileService.initialize(
-        "owner/agent",
-        authServiceState,
-        apiClientState,
-      );
+      await agentFileService.initialize("owner/agent", apiClientState);
 
       const agentFileState = agentFileService.getState();
       expect(agentFileState.agentFile?.model).toBe("gpt-4-agent");
@@ -192,17 +174,9 @@ describe("Agent file Integration Tests", () => {
 
     it("should not add agent file model when no agent file active", async () => {
       // Initialize agent file service without agent
-      const authServiceState = {
-        authConfig: mockAuthConfig,
-        isAuthenticated: true,
-      };
       const apiClientState = { apiClient: { mock: "apiClient" } };
 
-      await agentFileService.initialize(
-        undefined,
-        authServiceState,
-        apiClientState,
-      );
+      await agentFileService.initialize(undefined, apiClientState);
 
       const agentFileState = agentFileService.getState();
       expect(agentFileState.agentFile).toBeNull();
@@ -226,17 +200,9 @@ describe("Agent file Integration Tests", () => {
       mockLoadPackageFromHub.mockResolvedValue(mockAgentFile);
 
       // Mock the required service states
-      const authServiceState = {
-        authConfig: mockAuthConfig,
-        isAuthenticated: true,
-      };
       const apiClientState = { apiClient: { mock: "apiClient" } };
 
-      await agentFileService.initialize(
-        "owner/agent",
-        authServiceState,
-        apiClientState,
-      );
+      await agentFileService.initialize("owner/agent", apiClientState);
 
       // Test that --model flag and agent file model are both processed
       const baseOptions = { model: ["user-specified-model"] }; // User specified --model
@@ -282,17 +248,9 @@ describe("Agent file Integration Tests", () => {
 
     it("should not inject agent file rules when agent file inactive", async () => {
       // Initialize agent file service without agent file
-      const authServiceState = {
-        authConfig: mockAuthConfig,
-        isAuthenticated: true,
-      };
       const apiClientState = { apiClient: { mock: "apiClient" } };
 
-      await agentFileService.initialize(
-        undefined,
-        authServiceState,
-        apiClientState,
-      );
+      await agentFileService.initialize(undefined, apiClientState);
 
       const baseOptions = {};
       const agentFileState = agentFileService.getState();
@@ -343,21 +301,13 @@ describe("Agent file Integration Tests", () => {
       mockLoadPackageFromHub.mockResolvedValue(mockAgentFile);
 
       // Mock the required service states
-      const authServiceState = {
-        authConfig: mockAuthConfig,
-        isAuthenticated: true,
-      };
       const apiClientState = { apiClient: { mock: "apiClient" } };
 
-      await agentFileService.initialize(
-        "owner/agent",
-        authServiceState,
-        apiClientState,
-      );
+      await agentFileService.initialize("owner/agent", apiClientState);
 
       await modelService.initialize(
         mockAssistant as any,
-        mockAuthConfig as any,
+        agentFileService.getState(),
       );
 
       // Verify that available models include all original models
@@ -372,21 +322,13 @@ describe("Agent file Integration Tests", () => {
 
     it("should allow all models when no agent file active", async () => {
       // Mock the required service states
-      const authServiceState = {
-        authConfig: mockAuthConfig,
-        isAuthenticated: true,
-      };
       const apiClientState = { apiClient: { mock: "apiClient" } };
 
-      await agentFileService.initialize(
-        undefined,
-        authServiceState,
-        apiClientState,
-      );
+      await agentFileService.initialize(undefined, apiClientState);
 
       await modelService.initialize(
         mockAssistant as any,
-        mockAuthConfig as any,
+        agentFileService.getState(),
       );
 
       const availableModels = modelService.getAvailableChatModels();
@@ -403,19 +345,11 @@ describe("Agent file Integration Tests", () => {
       mockLoadPackageFromHub.mockRejectedValue(new Error("Network error"));
 
       // Mock the required service states
-      const authServiceState = {
-        authConfig: mockAuthConfig,
-        isAuthenticated: true,
-      };
       const apiClientState = { apiClient: { mock: "apiClient" } };
 
       // The service should throw the error, not handle it gracefully
       await expect(
-        agentFileService.initialize(
-          "owner/agent",
-          authServiceState,
-          apiClientState,
-        ),
+        agentFileService.initialize("owner/agent", apiClientState),
       ).rejects.toThrow("Failed to load agent from owner/agent");
 
       const agentFileState = agentFileService.getState();
@@ -424,7 +358,7 @@ describe("Agent file Integration Tests", () => {
       // Model service should work normally
       await modelService.initialize(
         mockAssistant as any,
-        mockAuthConfig as any,
+        agentFileService.getState(),
       );
       expect(mockGetLlmApi).toHaveBeenCalled();
     });
@@ -467,17 +401,9 @@ describe("Agent file Integration Tests", () => {
       mockLoadPackageFromHub.mockResolvedValue(mockAgentFile);
 
       // Mock the required service states
-      const authServiceState = {
-        authConfig: mockAuthConfig,
-        isAuthenticated: true,
-      };
       const apiClientState = { apiClient: { mock: "apiClient" } };
 
-      await agentFileService.initialize(
-        "owner/agent",
-        authServiceState,
-        apiClientState,
-      );
+      await agentFileService.initialize("owner/agent", apiClientState);
 
       const baseOptions = {};
       const agentFileState = agentFileService.getState();
@@ -502,17 +428,9 @@ describe("Agent file Integration Tests", () => {
       mockLoadPackageFromHub.mockResolvedValue(mockAgentFile);
 
       // Mock the required service states
-      const authServiceState = {
-        authConfig: mockAuthConfig,
-        isAuthenticated: true,
-      };
       const apiClientState = { apiClient: { mock: "apiClient" } };
 
-      await agentFileService.initialize(
-        "owner/agent",
-        authServiceState,
-        apiClientState,
-      );
+      await agentFileService.initialize("owner/agent", apiClientState);
 
       const baseOptions = {};
       const agentFileState = agentFileService.getState();
@@ -577,17 +495,9 @@ describe("Agent file Integration Tests", () => {
       mockLoadPackageFromHub.mockResolvedValue(mockAgentFile);
 
       // Mock the required service states
-      const authServiceState = {
-        authConfig: mockAuthConfig,
-        isAuthenticated: true,
-      };
       const apiClientState = { apiClient: { mock: "apiClient" } };
 
-      await agentFileService.initialize(
-        "owner/agent",
-        authServiceState,
-        apiClientState,
-      );
+      await agentFileService.initialize("owner/agent", apiClientState);
 
       const baseOptions = { prompt: ["user-prompt"] };
       const agentFileState = agentFileService.getState();
@@ -617,17 +527,9 @@ describe("Agent file Integration Tests", () => {
       mockLoadPackageFromHub.mockResolvedValue(mockAgentFile);
 
       // Mock the required service states
-      const authServiceState = {
-        authConfig: mockAuthConfig,
-        isAuthenticated: true,
-      };
       const apiClientState = { apiClient: { mock: "apiClient" } };
 
-      await agentFileService.initialize(
-        "owner/agent",
-        authServiceState,
-        apiClientState,
-      );
+      await agentFileService.initialize("owner/agent", apiClientState);
 
       const agentFileState = agentFileService.getState();
       expect(agentFileState.agentFile?.prompt).toBe("You are an assistant.");
@@ -657,17 +559,9 @@ describe("Agent file Integration Tests", () => {
       mockLoadPackageFromHub.mockResolvedValue(mockAgentFile);
 
       // Mock the required service states
-      const authServiceState = {
-        authConfig: mockAuthConfig,
-        isAuthenticated: true,
-      };
       const apiClientState = { apiClient: { mock: "apiClient" } };
 
-      await agentFileService.initialize(
-        "owner/agent",
-        authServiceState,
-        apiClientState,
-      );
+      await agentFileService.initialize("owner/agent", apiClientState);
 
       const agentFileState = agentFileService.getState();
       expect(agentFileState.agentFile?.model).toBe("gpt-4-agent");
@@ -690,17 +584,9 @@ describe("Agent file Integration Tests", () => {
       mockLoadPackageFromHub.mockResolvedValue(partialAgentFile);
 
       // Mock the required service states
-      const authServiceState = {
-        authConfig: mockAuthConfig,
-        isAuthenticated: true,
-      };
       const apiClientState = { apiClient: { mock: "apiClient" } };
 
-      await agentFileService.initialize(
-        "owner/partial",
-        authServiceState,
-        apiClientState,
-      );
+      await agentFileService.initialize("owner/partial", apiClientState);
 
       const agentFileState = agentFileService.getState();
       expect(agentFileState.agentFile?.model).toBe("gpt-3.5-turbo");

@@ -1,15 +1,14 @@
 import { AssistantUnrolled, ModelConfig } from "@continuedev/config-yaml";
 
-import { AuthConfig, getModelName } from "../auth/workos.js";
 import { createLlmApi, getLlmApi } from "../config.js";
 import { logger } from "../util/logger.js";
+import { getModelName } from "../util/modelPersistence.js";
 
 import { BaseService, ServiceWithDependencies } from "./BaseService.js";
 import { AgentFileServiceState, ModelServiceState } from "./types.js";
 
 /**
  * Service for managing LLM and model state
- * Depends on auth config and assistant config
  */
 export class ModelService
   extends BaseService<ModelServiceState>
@@ -17,14 +16,12 @@ export class ModelService
 {
   private availableModels: ModelConfig[] = [];
   private assistant: AssistantUnrolled | null = null;
-  private authConfig: AuthConfig | null = null;
 
   constructor() {
     super("ModelService", {
       llmApi: null,
       model: null,
       assistant: null,
-      authConfig: null,
     });
   }
 
@@ -32,7 +29,7 @@ export class ModelService
    * Declare dependencies on other services
    */
   getDependencies(): string[] {
-    return ["auth", "config", "agentFile"];
+    return ["config", "agentFile"];
   }
 
   /**
@@ -40,17 +37,14 @@ export class ModelService
    */
   async doInitialize(
     assistant: AssistantUnrolled,
-    authConfig: AuthConfig,
     agentFileServiceState: AgentFileServiceState | undefined,
   ): Promise<ModelServiceState> {
     logger.debug("ModelService.doInitialize called", {
       hasAssistant: !!assistant,
-      hasAuthConfig: !!authConfig,
       assistantModelsCount: assistant?.models?.length || 0,
     });
 
     this.assistant = assistant;
-    this.authConfig = authConfig;
     this.availableModels = (assistant.models?.filter(
       (model) =>
         model && (model.roles?.includes("chat") || model.roles === undefined),
@@ -64,7 +58,7 @@ export class ModelService
       preferredModelName = agentFileServiceState.agentFileModel?.name;
       modelSource = "agentFile";
     } else {
-      const persistedName = getModelName(authConfig);
+      const persistedName = getModelName();
       if (persistedName) {
         preferredModelName = persistedName;
         modelSource = "persisted";
@@ -73,54 +67,45 @@ export class ModelService
 
     // Try to use the preferred model (agent file or persisted)
     if (preferredModelName) {
-      // During initialization, we need to check against availableModels directly
       const modelIndex = this.availableModels.findIndex((model) => {
         const name = (model as any).name || (model as any).model;
         return name === preferredModelName;
       });
       if (modelIndex === -1) {
-        // Preferred model not found, use default model selection
-        const [llmApi, model] = getLlmApi(assistant, authConfig);
+        const [llmApi, model] = getLlmApi(assistant);
         return {
           llmApi,
           model,
           assistant,
-          authConfig,
-        };
-      } else {
-        // Use the preferred model - but we need to handle initialization specially
-        // During init, currentState isn't set yet, so switchModel would fail
-        // Instead, we'll manually switch here
-        const selectedModel = this.availableModels[modelIndex];
-        logger.debug(`Using ${modelSource} model during initialization`, {
-          modelIndex,
-          provider: selectedModel.provider,
-          name: (selectedModel as any).name || "unnamed",
-          modelSource,
-        });
-
-        const llmApi = createLlmApi(selectedModel, authConfig);
-        if (!llmApi) {
-          throw new Error(`Failed to initialize LLM with ${modelSource} model`);
-        }
-
-        return {
-          llmApi,
-          model: selectedModel,
-          assistant,
-          authConfig,
         };
       }
-    } else {
-      // Use default model selection
-      const [llmApi, model] = getLlmApi(assistant, authConfig);
+
+      const selectedModel = this.availableModels[modelIndex];
+      logger.debug(`Using ${modelSource} model during initialization`, {
+        modelIndex,
+        provider: selectedModel.provider,
+        name: (selectedModel as any).name || "unnamed",
+        modelSource,
+      });
+
+      const llmApi = createLlmApi(selectedModel);
+      if (!llmApi) {
+        throw new Error(`Failed to initialize LLM with ${modelSource} model`);
+      }
+
       return {
         llmApi,
-        model,
+        model: selectedModel,
         assistant,
-        authConfig,
       };
     }
+
+    const [llmApi, model] = getLlmApi(assistant);
+    return {
+      llmApi,
+      model,
+      assistant,
+    };
   }
 
   /**
@@ -156,13 +141,11 @@ export class ModelService
     name: string;
     index: number;
   }> {
-    // Get assistant from state to ensure we have the latest data
     const { assistant } = this.getState();
     if (!assistant || !assistant.models) {
       return [];
     }
 
-    // Filter for chat models
     const chatModels = (assistant.models.filter(
       (model) =>
         model && (model.roles?.includes("chat") || model.roles === undefined),
@@ -179,18 +162,12 @@ export class ModelService
    * Switch to a different chat model by index
    */
   async switchModel(modelIndex: number): Promise<ModelServiceState> {
-    // Get assistant and authConfig from state, but fall back to instance properties
-    // This is needed during initialization when state isn't set yet
     const stateValues = this.getState();
     const assistant = stateValues.assistant || this.assistant;
-    const authConfig = stateValues.authConfig || this.authConfig;
 
-    // Debug logging to understand the state
     logger.debug("switchModel: Checking state", {
       hasStateAssistant: !!stateValues.assistant,
-      hasStateAuthConfig: !!stateValues.authConfig,
       hasInstanceAssistant: !!this.assistant,
-      hasInstanceAuthConfig: !!this.authConfig,
       isInitialized: this.isReady(),
       isReady: this.isReady(),
       modelIndex,
@@ -199,19 +176,16 @@ export class ModelService
     if (!assistant) {
       logger.error("switchModel: Missing assistant data", {
         assistant: !!assistant,
-        authConfig: !!authConfig,
         stateKeys: Object.keys(stateValues),
         currentState: {
           hasLlmApi: !!stateValues.llmApi,
           hasModel: !!stateValues.model,
           hasAssistant: !!stateValues.assistant,
-          hasAuthConfig: !!stateValues.authConfig,
         },
       });
       throw new Error("ModelService not initialized - assistant data missing");
     }
 
-    // Get available models from assistant in state
     const availableModels = (assistant.models?.filter(
       (model) =>
         model && (model.roles?.includes("chat") || model.roles === undefined),
@@ -231,7 +205,7 @@ export class ModelService
     });
 
     try {
-      const llmApi = createLlmApi(selectedModel, authConfig);
+      const llmApi = createLlmApi(selectedModel);
 
       if (!llmApi) {
         throw new Error("Failed to initialize LLM with selected model");
@@ -241,7 +215,6 @@ export class ModelService
         llmApi,
         model: selectedModel,
         assistant,
-        authConfig,
       });
 
       logger.debug("Model switched successfully", {
@@ -266,7 +239,6 @@ export class ModelService
       return -1;
     }
 
-    // Get available models from state
     const availableModels = (state.assistant.models?.filter(
       (model) =>
         model && (model.roles?.includes("chat") || model.roles === undefined),
@@ -288,7 +260,6 @@ export class ModelService
       return -1;
     }
 
-    // Get available models from state
     const availableModels = (state.assistant.models?.filter(
       (model) =>
         model && (model.roles?.includes("chat") || model.roles === undefined),
@@ -312,18 +283,17 @@ export class ModelService
     }
     const subagentModels = modelState.assistant.models
       ?.filter((model) => !!model)
-      .filter((model) => !!model.name) // filter out models without a name
-      .filter((model) => model.roles?.includes("subagent")) // filter with role subagent
-      .filter((model) => !!model.chatOptions?.baseSystemMessage); // filter those with a system message
+      .filter((model) => !!model.name)
+      .filter((model) => model.roles?.includes("subagent"))
+      .filter((model) => !!model.chatOptions?.baseSystemMessage);
 
     if (!subagentModels) {
       return [];
     }
     return subagentModels?.map((model) => ({
-      llmApi: createLlmApi(model, modelState.authConfig),
+      llmApi: createLlmApi(model),
       model,
       assistant: modelState.assistant,
-      authConfig: modelState.authConfig,
     }));
   }
 }

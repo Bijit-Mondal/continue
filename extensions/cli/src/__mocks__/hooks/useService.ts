@@ -9,7 +9,6 @@ export const useService = vi.fn(() => ({
 
 export const useServices = vi.fn(() => ({
   services: {
-    auth: { isAuthenticated: true },
     config: { config: { name: "test-assistant" } },
     model: { model: "test-model", llmApi: {} },
     mcp: {},

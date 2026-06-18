@@ -103,55 +103,6 @@ export function mockOpenAIStream(
 }
 
 /**
- * Mocks WorkOS authentication endpoints
- */
-export function mockWorkOSAuth(options: {
-  accessToken?: string;
-  userInfo?: any;
-  organizations?: any[];
-  error?: boolean;
-}): void {
-  const {
-    accessToken = "test-access-token",
-    userInfo = { id: "user-123", email: "test@example.com" },
-    organizations = [{ id: "org-123", name: "Test Org" }],
-    error = false,
-  } = options;
-
-  // Mock token exchange
-  nock("https://api.workos.com")
-    .post("/user_management/authenticate")
-    .reply(
-      error ? 401 : 200,
-      error
-        ? { error: "Invalid credentials" }
-        : {
-            access_token: accessToken,
-            user: userInfo,
-          },
-    );
-
-  // Mock get user info
-  nock("https://api.workos.com")
-    .get("/user_management/users/me")
-    .matchHeader("authorization", `Bearer ${accessToken}`)
-    .reply(error ? 401 : 200, error ? { error: "Unauthorized" } : userInfo);
-
-  // Mock list organizations
-  nock("https://api.workos.com")
-    .get("/user_management/organizations")
-    .matchHeader("authorization", `Bearer ${accessToken}`)
-    .reply(
-      error ? 401 : 200,
-      error
-        ? { error: "Unauthorized" }
-        : {
-            data: organizations,
-          },
-    );
-}
-
-/**
  * Creates a mock configuration for testing
  */
 export function createMockConfig(overrides: any = {}): any {

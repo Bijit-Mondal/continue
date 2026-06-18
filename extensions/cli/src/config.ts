@@ -9,7 +9,6 @@ import {
   DefaultApi,
 } from "@continuedev/sdk/dist/api/dist/index.js";
 
-import { AuthConfig } from "./auth/workos.js";
 import { env } from "./env.js";
 import { getUniqueId } from "./util/uniqueId.js";
 import { getVersion } from "./version.js";
@@ -41,10 +40,7 @@ function _mergeUserAgentIntoRequestOptions(
 /**
  * Creates an LLM API instance from a ModelConfig and auth configuration
  */
-export function createLlmApi(
-  model: ModelConfig,
-  _authConfig: AuthConfig,
-): BaseLlmApi | null {
+export function createLlmApi(model: ModelConfig): BaseLlmApi | null {
   const config: LLMConfig = {
     provider: model.provider as any,
     model: model.model,
@@ -59,7 +55,6 @@ export function createLlmApi(
 
 export function getLlmApi(
   assistant: AssistantUnrolled,
-  authConfig: AuthConfig,
 ): [BaseLlmApi, ModelConfig] {
   if (!assistant.models || assistant.models.length === 0) {
     throw new Error("No models found in the configured assistant");
@@ -76,7 +71,7 @@ export function getLlmApi(
     );
   }
 
-  const llmApi = createLlmApi(model, authConfig);
+  const llmApi = createLlmApi(model);
 
   if (!llmApi) {
     throw new Error(

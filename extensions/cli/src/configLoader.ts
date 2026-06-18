@@ -13,12 +13,6 @@ import { DefaultApiInterface } from "@continuedev/sdk/dist/api/dist/index.js";
 import chalk from "chalk";
 
 import { uriToPath, uriToSlug } from "./auth/uriUtils.js";
-import type { AuthConfig } from "./auth/workos.js";
-import {
-  getAccessToken,
-  getOrganizationId,
-  updateConfigUri,
-} from "./auth/workos.js";
 import { CLIPlatformClient } from "./CLIPlatformClient.js";
 import { env } from "./env.js";
 import { ModelsDevRegistryClient } from "./modelsDevRegistry.js";
@@ -45,36 +39,14 @@ export type ConfigSource =
  * with clear precedence and fallback logic in a single testable function.
  */
 export async function loadConfiguration(
-  authConfig: AuthConfig,
   cliConfigPath: string | undefined,
   apiClient: DefaultApiInterface,
   injectBlocks: PackageIdentifier[],
   isHeadless: boolean | undefined,
 ): Promise<ConfigLoadResult> {
-  const organizationId = getOrganizationId(authConfig);
-  const accessToken = getAccessToken(authConfig);
+  const configSource = determineConfigSource(cliConfigPath, isHeadless);
 
-  // Step 1: Determine config source using precedence rules
-  const configSource = determineConfigSource(
-    authConfig,
-    cliConfigPath,
-    isHeadless,
-  );
-
-  // Step 2: Load configuration from the determined source
-  const config = await loadFromSource(
-    configSource,
-    accessToken,
-    organizationId ?? null,
-    apiClient,
-    injectBlocks,
-  );
-
-  // Step 3: Save config URI for session continuity
-  const uri = getUriFromSource(configSource);
-  if (uri) {
-    updateConfigUri(uri);
-  }
+  const config = await loadFromSource(configSource, apiClient, injectBlocks);
 
   return { config, source: configSource };
 }
@@ -86,7 +58,6 @@ export async function loadConfiguration(
  * 3. Default resolution (if no flag and no saved URI)
  */
 function determineConfigSource(
-  authConfig: AuthConfig,
   cliConfigPath: string | undefined,
   _isHeadless: boolean | undefined,
 ): ConfigSource {
@@ -108,62 +79,31 @@ function determineConfigSource(
  */
 async function loadFromSource(
   source: ConfigSource,
-  accessToken: string | null,
-  organizationId: string | null,
   apiClient: DefaultApiInterface,
   injectBlocks: PackageIdentifier[],
 ): Promise<AssistantUnrolled> {
   try {
     switch (source.type) {
       case "cli-flag":
-        return await loadFromCliFlag(
-          source.path,
-          accessToken,
-          organizationId,
-          apiClient,
-          injectBlocks,
-        );
+        return await loadFromCliFlag(source.path, apiClient, injectBlocks);
 
       case "saved-uri":
-        return await loadFromSavedUri(
-          source.uri,
-          accessToken,
-          organizationId,
-          apiClient,
-          injectBlocks,
-        );
+        return await loadFromSavedUri(source.uri, apiClient, injectBlocks);
 
       case "user-assistant":
-        return await loadUserAssistantWithFallback(
-          organizationId,
-          apiClient,
-          accessToken,
-          injectBlocks,
-        );
+        return await loadUserAssistantWithFallback(apiClient, injectBlocks);
 
       case "local-config-yaml":
-        return await loadLocalConfigYaml(
-          accessToken,
-          organizationId,
-          apiClient,
-          injectBlocks,
-        );
+        return await loadLocalConfigYaml(apiClient, injectBlocks);
 
       case "remote-default-config":
-        return await loadDefaultConfig(
-          organizationId,
-          apiClient,
-          accessToken,
-          injectBlocks,
-        );
+        return await loadDefaultConfig(apiClient, injectBlocks);
 
       // TODO this is currently skipped because we are forcing default config
       // Because models add on won't work for injected blocks e.g. default model, (only default config)
       case "no-config":
         return await unrollPackageIdentifiersAsConfigYaml(
           injectBlocks,
-          accessToken,
-          organizationId,
           apiClient,
         );
       default:
@@ -177,12 +117,7 @@ async function loadFromSource(
           "Failed to load user assistants, falling back to default agent",
         ),
       );
-      return await loadDefaultConfig(
-        organizationId,
-        apiClient,
-        accessToken,
-        injectBlocks,
-      );
+      return await loadDefaultConfig(apiClient, injectBlocks);
     }
     throw error;
   }
@@ -194,62 +129,32 @@ async function loadFromSource(
  */
 async function loadFromCliFlag(
   configPath: string,
-  accessToken: string | null,
-  organizationId: string | null,
   apiClient: DefaultApiInterface,
   injectBlocks: PackageIdentifier[],
 ): Promise<AssistantUnrolled> {
   if (isFilePath(configPath)) {
-    // Load local YAML file
-    return await loadConfigYaml(
-      configPath,
-      accessToken,
-      organizationId,
-      apiClient,
-      injectBlocks,
-    );
-  } else {
-    // Load assistant slug
-    return await loadAssistantSlug(
-      configPath,
-      accessToken,
-      organizationId,
-      apiClient,
-      injectBlocks,
-    );
+    return await loadConfigYaml(configPath, apiClient, injectBlocks);
   }
+
+  return await loadAssistantSlug(configPath, apiClient, injectBlocks);
 }
 
 /**
- * Loads configuration from saved URI in auth config
+ * Loads configuration from saved URI
  */
 async function loadFromSavedUri(
   uri: string,
-  accessToken: string | null,
-  organizationId: string | null,
   apiClient: DefaultApiInterface,
   injectBlocks: PackageIdentifier[],
 ): Promise<AssistantUnrolled> {
   const filePath = uriToPath(uri);
   if (filePath) {
-    return await loadConfigYaml(
-      filePath,
-      accessToken,
-      organizationId,
-      apiClient,
-      injectBlocks,
-    );
+    return await loadConfigYaml(filePath, apiClient, injectBlocks);
   }
 
   const slug = uriToSlug(uri);
   if (slug) {
-    return await loadAssistantSlug(
-      slug,
-      accessToken,
-      organizationId,
-      apiClient,
-      injectBlocks,
-    );
+    return await loadAssistantSlug(slug, apiClient, injectBlocks);
   }
 
   throw new Error(`Invalid saved config URI: ${uri}`);
@@ -259,14 +164,11 @@ async function loadFromSavedUri(
  * Loads first available user assistant with fallback to default agent
  */
 async function loadUserAssistantWithFallback(
-  organizationId: string | null,
   apiClient: DefaultApiInterface,
-  accessToken: string | null,
   injectBlocks: PackageIdentifier[],
 ): Promise<AssistantUnrolled> {
   const assistants = await apiClient.listAssistants({
     alwaysUseProxy: "false",
-    organizationId: organizationId ?? undefined,
   });
 
   if (assistants.length > 0) {
@@ -286,8 +188,6 @@ async function loadUserAssistantWithFallback(
     if (injectBlocks.length > 0) {
       const injectedConfig = await unrollPackageIdentifiersAsConfigYaml(
         injectBlocks,
-        accessToken,
-        organizationId,
         apiClient,
       );
       apiConfig = mergeUnrolledAssistants(apiConfig, injectedConfig);
@@ -296,47 +196,30 @@ async function loadUserAssistantWithFallback(
     return apiConfig;
   }
 
-  // No user assistants, fall back to default agent
-  return await loadDefaultConfig(
-    organizationId,
-    apiClient,
-    accessToken,
-    injectBlocks,
-  );
+  return await loadDefaultConfig(apiClient, injectBlocks);
 }
 
 /**
  * Loads default config.yaml from ~/.tezz/config.yaml
  */
 async function loadLocalConfigYaml(
-  accessToken: string | null,
-  organizationId: string | null,
   apiClient: DefaultApiInterface,
   injectBlocks: PackageIdentifier[],
 ): Promise<AssistantUnrolled> {
   const defaultConfigPath = path.join(env.continueHome, "config.yaml");
-  return await loadConfigYaml(
-    defaultConfigPath,
-    accessToken,
-    organizationId,
-    apiClient,
-    injectBlocks,
-  );
+  return await loadConfigYaml(defaultConfigPath, apiClient, injectBlocks);
 }
 
 /**
  * Loads the default continuedev/default-config
  */
 async function loadDefaultConfig(
-  organizationId: string | null,
   apiClient: DefaultApiInterface,
-  accessToken: string | null,
   injectBlocks: PackageIdentifier[],
 ): Promise<AssistantUnrolled> {
   const resp = await apiClient.getAssistant({
     ownerSlug: "continuedev",
     packageSlug: "default-cli-config",
-    organizationId: organizationId ?? undefined,
   });
 
   if (!resp.configResult.config) {
@@ -348,8 +231,6 @@ async function loadDefaultConfig(
   if (injectBlocks.length > 0) {
     const injectedConfig = await unrollPackageIdentifiersAsConfigYaml(
       injectBlocks,
-      accessToken,
-      organizationId,
       apiClient,
     );
     apiConfig = mergeUnrolledAssistants(apiConfig, injectedConfig);
@@ -360,8 +241,6 @@ async function loadDefaultConfig(
 
 export async function unrollPackageIdentifiersAsConfigYaml(
   packageIdentifiers: PackageIdentifier[],
-  accessToken: string | null,
-  organizationId: string | null,
   apiClient: DefaultApiInterface,
 ): Promise<AssistantUnrolled> {
   const unrollResult = await unrollAssistantFromContent(
@@ -373,7 +252,7 @@ export async function unrollPackageIdentifiersAsConfigYaml(
     createRegistry(undefined),
     {
       currentUserSlug: "",
-      platformClient: new CLIPlatformClient(organizationId, apiClient),
+      platformClient: new CLIPlatformClient(null, apiClient),
       renderSecrets: true,
       injectBlocks: packageIdentifiers,
     },
@@ -393,8 +272,6 @@ export async function unrollPackageIdentifiersAsConfigYaml(
 
 async function unrollAssistantWithConfig(
   packageIdentifier: PackageIdentifier,
-  accessToken: string | null,
-  organizationId: string | null,
   apiClient: DefaultApiInterface,
   injectBlocks: PackageIdentifier[],
 ): Promise<AssistantUnrolled> {
@@ -409,7 +286,7 @@ async function unrollAssistantWithConfig(
       currentUserSlug: "",
       alwaysUseProxy: false,
       renderSecrets: true,
-      platformClient: new CLIPlatformClient(organizationId, apiClient),
+      platformClient: new CLIPlatformClient(null, apiClient),
       injectBlocks,
     },
   );
@@ -433,15 +310,11 @@ async function unrollAssistantWithConfig(
  */
 async function loadConfigYaml(
   filePath: string,
-  accessToken: string | null,
-  organizationId: string | null,
   apiClient: DefaultApiInterface,
   injectBlocks: PackageIdentifier[],
 ): Promise<AssistantUnrolled> {
   return await unrollAssistantWithConfig(
     { fileUri: filePath, uriType: "file" },
-    accessToken,
-    organizationId,
     apiClient,
     injectBlocks,
   );
@@ -452,8 +325,6 @@ async function loadConfigYaml(
  */
 async function loadAssistantSlug(
   slug: string,
-  accessToken: string | null,
-  organizationId: string | null,
   apiClient: DefaultApiInterface,
   injectBlocks: PackageIdentifier[],
 ): Promise<AssistantUnrolled> {
@@ -463,15 +334,13 @@ async function loadAssistantSlug(
       `Invalid assistant slug format. Expected "owner/package", got: ${slug}`,
     );
   }
-  // Unroll locally if not logged in
+
   if (!(apiClient as any).configuration.accessToken) {
     return await unrollAssistantWithConfig(
       {
         uriType: "slug",
         fullSlug: { ownerSlug, packageSlug, versionSlug: "latest" },
       },
-      accessToken ?? null,
-      organizationId,
       apiClient,
       injectBlocks,
     );
@@ -481,7 +350,6 @@ async function loadAssistantSlug(
     ownerSlug,
     packageSlug,
     alwaysUseProxy: "false",
-    organizationId: organizationId ?? undefined,
   });
 
   const result = resp.configResult;
@@ -496,8 +364,6 @@ async function loadAssistantSlug(
   if (injectBlocks.length > 0) {
     const injectedConfig = await unrollPackageIdentifiersAsConfigYaml(
       injectBlocks,
-      accessToken,
-      organizationId,
       apiClient,
     );
     apiConfig = mergeUnrolledAssistants(apiConfig, injectedConfig);
@@ -523,22 +389,4 @@ function isFilePath(configPath: string): boolean {
     configPath.includes(".yml") ||
     configPath.includes(".json")
   );
-}
-
-/**
- * Converts a config source back to a URI for persistence
- */
-function getUriFromSource(source: ConfigSource): string | null {
-  switch (source.type) {
-    case "cli-flag":
-      return isFilePath(source.path)
-        ? `file://${source.path}`
-        : `slug://${source.path}`;
-    case "saved-uri":
-      return source.uri;
-    case "local-config-yaml":
-      return `file://${path.join(env.continueHome, "config.yaml")}`;
-    default:
-      return null;
-  }
 }

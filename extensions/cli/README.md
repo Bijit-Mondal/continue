@@ -102,9 +102,6 @@ tezz ls --json
 
 - `tezz`: Start an interactive chat session
 - `tezz ls`: List recent sessions with TUI selector to choose one to resume
-- `tezz login`: Authenticate with Tezz
-- `tezz logout`: Sign out of current session
-- `tezz remote`: Launch a remote instance
 - `tezz serve`: Start HTTP server mode
 
 ### Session Listing (`tezz ls`)

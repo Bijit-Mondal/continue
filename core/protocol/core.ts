@@ -299,7 +299,6 @@ export type ToCoreFromIdeOrWebviewProtocol = {
   "docs/getIndexedPages": [{ startUrl: string }, string[]];
   addAutocompleteModel: [{ model: ModelDescription }, void];
 
-  "auth/getAuthUrl": [{ useOnboarding: boolean }, { url: string }];
   "tools/call": [
     { toolCall: ToolCall },
     {

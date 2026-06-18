@@ -20,14 +20,6 @@ describe("serve command", () => {
     vi.spyOn(console, "log").mockImplementation(() => {});
 
     // Mock all required modules at test level with correct relative paths
-    vi.mock("../auth/workos.js", () => ({
-      loadAuthConfig: vi.fn(() => null),
-      ensureOrganization: vi.fn(),
-      getOrganizationId: vi.fn(),
-      isAuthenticated: vi.fn(() => false),
-      isAuthenticatedConfig: vi.fn(() => false),
-    }));
-
     vi.mock("../onboarding.js", () => ({
       runNormalFlow: vi.fn(() =>
         Promise.resolve({

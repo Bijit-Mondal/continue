@@ -24,10 +24,6 @@ vi.mock("../configLoader.js", () => ({
   loadConfiguration: vi.fn(),
 }));
 
-vi.mock("../auth/workos.js", () => ({
-  loadAuthConfig: vi.fn(),
-}));
-
 vi.mock("../util/logger.js", () => ({
   logger: {
     debug: vi.fn(),

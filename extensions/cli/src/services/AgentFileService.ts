@@ -23,7 +23,6 @@ import { serviceContainer } from "./ServiceContainer.js";
 import {
   AgentFileServiceState,
   ApiClientServiceState,
-  AuthServiceState,
   SERVICE_NAMES,
 } from "./types.js";
 
@@ -49,7 +48,7 @@ export class AgentFileService
   }
 
   getDependencies(): string[] {
-    return [SERVICE_NAMES.AUTH, SERVICE_NAMES.API_CLIENT];
+    return [SERVICE_NAMES.API_CLIENT];
   }
 
   async getAgentFile(agentPath: string): Promise<AgentFile> {
@@ -98,7 +97,6 @@ export class AgentFileService
    */
   async doInitialize(
     agentFilePath: string | undefined,
-    authServiceState: AuthServiceState,
     apiClientState: ApiClientServiceState,
   ): Promise<AgentFileServiceState> {
     if (!agentFilePath) {

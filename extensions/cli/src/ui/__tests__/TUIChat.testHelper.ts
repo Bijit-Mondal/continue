@@ -121,7 +121,6 @@ export function runTest(
           // Normal mode - set up service mocks with ready services
           mockUseServices.mockReturnValue({
             services: {
-              auth: { authConfig: null, isAuthenticated: false },
               config: { config: mockAssistant },
               model: {
                 llmApi: new MockLlmApi(),
@@ -140,8 +139,6 @@ export function runTest(
               ({
                 value: (() => {
                   switch (serviceName) {
-                    case "auth":
-                      return { authConfig: null, isAuthenticated: false };
                     case "config":
                       return { config: mockAssistant };
                     case "model":
@@ -278,7 +275,6 @@ export function runTestSuite(
                 // Normal mode
                 mockUseServices.mockReturnValue({
                   services: {
-                    auth: { authConfig: null, isAuthenticated: false },
                     config: { config: mockAssistant },
                     model: {
                       llmApi: new MockLlmApi(),
@@ -297,8 +293,6 @@ export function runTestSuite(
                     ({
                       value: (() => {
                         switch (serviceName) {
-                          case "auth":
-                            return { authConfig: null, isAuthenticated: false };
                           case "config":
                             return { config: mockAssistant };
                           case "model":

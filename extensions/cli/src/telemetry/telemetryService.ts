@@ -52,7 +52,6 @@ class TelemetryService {
   private tokenCounter: any = null;
   private codeEditDecisionCounter: any = null;
   private activeTimeCounter: any = null;
-  private authAttemptsCounter: any = null;
   private mcpConnectionsGauge: any = null;
   private startupTimeHistogram: any = null;
   private responseTimeHistogram: any = null;
@@ -258,14 +257,6 @@ class TelemetryService {
     );
 
     // Additional Tezz CLI specific metrics
-    this.authAttemptsCounter = this.meter.createCounter(
-      "continue_cli_auth_attempts",
-      {
-        description: "Authentication attempts",
-        unit: "{attempt}",
-      },
-    );
-
     this.mcpConnectionsGauge = this.meter.createObservableGauge(
       "continue_cli_mcp_connections",
       {
@@ -426,18 +417,6 @@ class TelemetryService {
       // Record only the delta for this active window (in seconds)
       this.activeTimeCounter.add(deltaMs / 1000, this.getStandardAttributes());
     }
-  }
-
-  public recordAuthAttempt(
-    result: "success" | "failure" | "cancelled",
-    method: "workos" | "token",
-  ) {
-    if (!this.isEnabled()) return;
-
-    this.authAttemptsCounter.add(
-      1,
-      this.getStandardAttributes({ result, method }),
-    );
   }
 
   public recordMCPConnection(

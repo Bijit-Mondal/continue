@@ -10,8 +10,7 @@ import { AssistantConfig } from "@continuedev/sdk";
 import { DefaultApiInterface } from "@continuedev/sdk/dist/api/dist/index.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 
-import type { AuthConfig } from "../auth/workos.js";
-import { BaseCommandOptions } from "../commands/BaseCommandOptions.js";
+import type { BaseCommandOptions } from "../commands/BaseCommandOptions.js";
 import { PermissionMode } from "../permissions/types.js";
 
 import { type MCPService } from "./MCPService.js";
@@ -44,12 +43,6 @@ export interface ServiceEvents {
 /**
  * Core service types
  */
-export interface AuthServiceState {
-  authConfig: AuthConfig | null;
-  isAuthenticated: boolean;
-  organizationId?: string;
-}
-
 export interface ConfigServiceState {
   config: AssistantUnrolled | null;
   configPath?: string;
@@ -59,7 +52,6 @@ export interface ModelServiceState {
   llmApi: BaseLlmApi | null;
   model: ModelConfig | null;
   assistant: AssistantUnrolled | null;
-  authConfig: AuthConfig | null;
 }
 
 export type MCPServerStatus = "idle" | "connecting" | "connected" | "error";
@@ -142,7 +134,6 @@ export type { GitAiIntegrationServiceState } from "./GitAiIntegrationService.js"
  * Service names as constants to prevent typos
  */
 export const SERVICE_NAMES = {
-  AUTH: "auth",
   CONFIG: "config",
   MODEL: "model",
   MCP: "mcp",

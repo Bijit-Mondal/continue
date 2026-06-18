@@ -5,9 +5,9 @@ import * as path from "path";
 import { AssistantUnrolled, ModelConfig } from "@continuedev/config-yaml";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-import { getModelName, updateModelName } from "../auth/workos.js";
 import * as config from "../config.js";
 import { ModelService } from "../services/ModelService.js";
+import { getModelName, updateModelName } from "../util/modelPersistence.js";
 import { persistModelName } from "../util/modelPersistence.js";
 
 // Mock the config module
@@ -86,11 +86,11 @@ describe("Model Persistence End-to-End", () => {
     updateModelName("Claude 3.5 Sonnet");
 
     // Verify it was saved
-    expect(getModelName(null)).toBe("Claude 3.5 Sonnet");
+    expect(getModelName()).toBe("Claude 3.5 Sonnet");
 
     // Step 2: Create a new service (simulating restart) - should restore persisted model
     const service = new ModelService();
-    const state = await service.initialize(mockAssistant, null);
+    const state = await service.initialize(mockAssistant);
 
     // Verify the persisted model is restored
     expect(state.model?.name).toBe("Claude 3.5 Sonnet");
@@ -102,7 +102,7 @@ describe("Model Persistence End-to-End", () => {
     updateModelName("Non-existent Model");
 
     const service = new ModelService();
-    const state = await service.initialize(mockAssistant, null);
+    const state = await service.initialize(mockAssistant);
 
     // Should fall back to first available model (GPT-4)
     expect(state.model?.name).toBe("GPT-4");
@@ -143,21 +143,21 @@ describe("Model Persistence End-to-End", () => {
     const service = new ModelService();
     // Clear any persisted model first
     persistModelName(null);
-    await service.initialize(mockAssistant, null);
+    await service.initialize(mockAssistant);
 
     // Switch to Claude 3.5 Sonnet
     await service.switchModel(1);
     updateModelName("Claude 3.5 Sonnet");
-    expect(getModelName(null)).toBe("Claude 3.5 Sonnet");
+    expect(getModelName()).toBe("Claude 3.5 Sonnet");
 
     // Switch to Claude 3 Opus
     await service.switchModel(2);
     updateModelName("Claude 3 Opus");
-    expect(getModelName(null)).toBe("Claude 3 Opus");
+    expect(getModelName()).toBe("Claude 3 Opus");
 
     // Restart and verify last selection
     const newService = new ModelService();
-    const state = await newService.initialize(mockAssistant, null);
+    const state = await newService.initialize(mockAssistant);
     expect(state.model?.name).toBe("Claude 3 Opus");
   });
 });

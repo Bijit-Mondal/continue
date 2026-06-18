@@ -17,3 +17,11 @@ export function persistModelName(modelName: string | null): void {
   const globalContext = new GlobalContext();
   globalContext.update("cliSelectedModel", modelName ?? undefined);
 }
+
+export function getModelName(): string | null {
+  return getPersistedModelName();
+}
+
+export function updateModelName(modelName: string | null): void {
+  persistModelName(modelName);
+}

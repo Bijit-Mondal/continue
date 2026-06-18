@@ -23,10 +23,7 @@ This is a CLI tool for Continue Dev that provides an interactive AI-assisted dev
    - **TUI mode**: Terminal User Interface using Ink/React
    - **Standard mode**: Traditional readline-based chat interface
 
-2. **Authentication** (`src/auth/`): WorkOS-based authentication system
-
-   - `ensureAuth.ts`: Handles authentication flow
-   - `workos.ts`: WorkOS configuration and token management
+2. **Configuration** (`src/configLoader.ts`, `src/config.ts`): Loads assistant config from local YAML or hub packages
 
 3. **Continue SDK Integration** (`src/continueSDK.ts`): Initializes the Continue SDK client with:
 
