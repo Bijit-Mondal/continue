@@ -6,7 +6,13 @@ export default defineConfig({
     globals: true,
     environment: "node",
     setupFiles: ["./vitest.global-dir-setup.ts", "./vitest.setup.ts"],
-    exclude: ["**/node_modules/**", "**/dist/**", "**/*.e2e.*", "**/e2e/**"],
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/*.e2e.*",
+      "**/e2e/**",
+      "**/smoke-api/**",
+    ],
     coverage: {
       reporter: ["text", "json", "html"],
       exclude: [

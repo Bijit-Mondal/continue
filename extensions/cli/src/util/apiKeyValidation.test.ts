@@ -45,7 +45,9 @@ describe("getApiKeyValidationError", () => {
     expect(getApiKeyValidationError("TEST-openai-1234")).toBe(
       'Anthropic API key must start with "sk-ant-"',
     );
-    expect(getApiKeyValidationError("sk-ant-")).toBe("API key is too short");
+    expect(getApiKeyValidationError("sk-ant-")).toBe(
+      "Anthropic API key is too short",
+    );
     expect(getApiKeyValidationError("invalid")).toBe(
       'Anthropic API key must start with "sk-ant-"',
     );
