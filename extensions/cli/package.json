@@ -1,13 +1,20 @@
 {
-  "name": "@continuedev/cli",
-  "version": "0.0.0-dev",
-  "description": "Tezz CLI",
+  "name": "tezz-code",
+  "version": "0.1.0",
+  "description": "Tezz CLI - AI-powered coding assistant",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
   "bin": {
     "tezz": "dist/tezz.js"
   },
+  "files": [
+    "dist/tezz.js",
+    "dist/index.js",
+    "dist/xhr-sync-worker.js",
+    "stubs",
+    "README.md"
+  ],
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest watch",
@@ -20,6 +27,8 @@
     "build:validate": "node validate-aliases.mjs",
     "build:bundle": "node build.mjs",
     "build": "npm run build:validate && npm run build:bundle",
+    "prepublishOnly": "npm run build",
+    "publish:npm": "npm run build:local-deps && npm test && npm publish",
     "start": "node dist/tezz.js",
     "dev": "tsx src/index.ts",
     "repomix:sdk": "npx repomix node_modules/@continuedev/sdk --ignore **/api,cli-repomix.xml -o sdk-repomix.xml",
@@ -30,20 +39,23 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "watch:logs": "touch ~/.tezz/logs/tezz.log && tail -f ~/.tezz/logs/tezz.log",
-    "prepare": "npm run build",
     "semantic-release": "semantic-release",
     "semantic-release:dry-run": "semantic-release --dry-run"
   },
-  "author": "Continue Dev, Inc.",
+  "author": "Bijit Mondal",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/continuedev/continue.git"
+    "url": "https://github.com/Bijit-Mondal/continue.git",
+    "directory": "extensions/cli"
   },
   "bugs": {
-    "url": "https://github.com/continuedev/continue/issues"
+    "url": "https://github.com/Bijit-Mondal/continue/issues"
   },
-  "homepage": "https://tezz.dev",
+  "homepage": "https://github.com/Bijit-Mondal/continue/tree/main/extensions/cli#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "fdir": "^6.4.2",
     "find-up": "^8.0.0",

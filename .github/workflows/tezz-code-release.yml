@@ -1,0 +1,76 @@
+name: Tezz Code Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish to npm (e.g. 0.1.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish tezz-code
+    if: github.repository == 'Bijit-Mondal/continue'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: extensions/cli
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Setup packages
+        uses: ./.github/actions/setup-packages
+
+      - name: Setup core component
+        uses: ./.github/actions/setup-component
+        with:
+          component: core
+          include-root: true
+
+      - name: Build core
+        run: |
+          cd core
+          npm run build
+
+      - name: Install CLI dependencies
+        run: npm ci --include=optional
+
+      - name: Set version
+        run: npm version ${{ inputs.version }} --no-git-tag-version --allow-same-version
+
+      - name: Build CLI
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "tezz-code-v${{ inputs.version }}" \
+            --title "tezz-code v${{ inputs.version }}" \
+            --notes "Published [tezz-code@${{ inputs.version }}](https://www.npmjs.com/package/tezz-code) to npm.
+
+          Install:
+          \`\`\`bash
+          npm i -g tezz-code
+          \`\`\`" \
+            --latest

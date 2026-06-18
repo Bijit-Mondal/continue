@@ -1,5 +1,6 @@
 {
   "branches": ["main"],
+  "repositoryUrl": "https://github.com/Bijit-Mondal/continue.git",
   "plugins": [
     [
       "@semantic-release/commit-analyzer",
@@ -33,6 +34,11 @@
         "pkgRoot": "."
       }
     ],
-    "@semantic-release/github"
+    [
+      "@semantic-release/github",
+      {
+        "assets": []
+      }
+    ]
   ]
 }

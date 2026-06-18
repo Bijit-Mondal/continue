@@ -9,19 +9,19 @@ The Tezz CLI (`tezz`) is a customizable command line coding agent.
 **macOS / Linux:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/continuedev/continue/main/extensions/cli/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Bijit-Mondal/continue/main/extensions/cli/scripts/install.sh | bash
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
-irm https://raw.githubusercontent.com/continuedev/continue/main/extensions/cli/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/Bijit-Mondal/continue/main/extensions/cli/scripts/install.ps1 | iex
 ```
 
 Or install with npm if you have Node.js 20+:
 
 ```bash
-npm i -g @continuedev/cli
+npm i -g tezz-code
 ```
 
 ## Development

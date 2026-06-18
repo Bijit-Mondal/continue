@@ -5,7 +5,7 @@ set -euo pipefail
 # curl -fsSL https://continue.dev/install.sh | bash
 
 REQUIRED_NODE_VERSION="20.20.1"
-PACKAGE_NAME="@continuedev/cli"
+PACKAGE_NAME="tezz-code"
 CLI_COMMAND="tezz"
 NETWORK_TIMEOUT=60
 FNM_INSTALL_DIR="$HOME/.local/share/fnm"
