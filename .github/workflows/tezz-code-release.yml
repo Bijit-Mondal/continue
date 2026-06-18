@@ -16,9 +16,6 @@ jobs:
     name: Publish tezz-code
     if: github.repository == 'Bijit-Mondal/continue'
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: extensions/cli
 
     steps:
       - name: Checkout
@@ -40,23 +37,27 @@ jobs:
           include-root: true
 
       - name: Build core
-        run: |
-          cd core
-          npm run build
+        working-directory: core
+        run: npm run build
 
       - name: Install CLI dependencies
+        working-directory: extensions/cli
         run: npm ci --include=optional
 
       - name: Set version
+        working-directory: extensions/cli
         run: npm version ${{ inputs.version }} --no-git-tag-version --allow-same-version
 
       - name: Build CLI
+        working-directory: extensions/cli
         run: npm run build
 
       - name: Run tests
+        working-directory: extensions/cli
         run: npm test
 
       - name: Publish to npm
+        working-directory: extensions/cli
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
