@@ -40,14 +40,14 @@ describe("getApiKeyValidationError", () => {
     expect(getApiKeyValidationError(null)).toBe("API key is required");
     expect(getApiKeyValidationError(undefined)).toBe("API key is required");
     expect(getApiKeyValidationError("TEST-")).toBe(
-      'API key must start with "sk-ant-"',
+      'Anthropic API key must start with "sk-ant-"',
     );
     expect(getApiKeyValidationError("TEST-openai-1234")).toBe(
-      'API key must start with "sk-ant-"',
+      'Anthropic API key must start with "sk-ant-"',
     );
     expect(getApiKeyValidationError("sk-ant-")).toBe("API key is too short");
     expect(getApiKeyValidationError("invalid")).toBe(
-      'API key must start with "sk-ant-"',
+      'Anthropic API key must start with "sk-ant-"',
     );
   });
 });
