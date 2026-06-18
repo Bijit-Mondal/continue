@@ -1,11 +1,10 @@
 import { ChatMessage, LLMOptions } from "..";
 
-import { allModelProviders } from "@continuedev/llm-info";
-import { LlmInfo } from "@continuedev/llm-info/dist/types";
 import { BaseLLM } from ".";
 import { DEFAULT_CONTEXT_LENGTH } from "./constants";
 import { LLMClasses } from "./llms";
 import { LLMLogger } from "./logger";
+import { findModelMetadata } from "./modelsDevCatalog";
 
 class DummyLLM extends BaseLLM {
   static providerName = "openai";
@@ -17,6 +16,13 @@ class DummyLLM extends BaseLLM {
       maxTokens: 4096,
     },
     apiBase: "https://api.test-api-dummy.com/v1/",
+  };
+}
+
+class NoContextDefaultLLM extends BaseLLM {
+  static providerName = "openai";
+  static defaultOptions: Partial<LLMOptions> = {
+    model: "dummy-no-context-model",
   };
 }
 describe("BaseLLM", () => {
@@ -173,29 +179,38 @@ describe("BaseLLM", () => {
   });
 
   describe("default context length", () => {
-    allModelProviders.map((modelProvider) => {
-      const LLMClass = LLMClasses.find(
-        (llm) => llm.providerName === modelProvider.id,
-      );
-      if (!LLMClass) {
-        throw new Error(`did not find LLM provider for ${modelProvider.id}`);
-      }
-      const testContextLength = (llmInfo: LlmInfo) => () => {
-        const llm = new LLMClass({ model: llmInfo.model });
-        if (llmInfo.contextLength) {
-          expect(llm.contextLength).toEqual(llmInfo.contextLength);
+    const cases = [
+      { provider: "openai", model: "gpt-4.1" },
+      { provider: "anthropic", model: "claude-3-5-haiku-latest" },
+      { provider: "gemini", model: "gemini-2.5-pro" },
+      { provider: "mistral", model: "mistral-large-latest" },
+      { provider: "xAI", model: "grok-4-fast-reasoning" },
+    ];
+
+    cases.forEach(({ provider, model }) => {
+      test(`should have correct context length for ${provider}/${model}`, () => {
+        const LLMClass = LLMClasses.find(
+          (llm) => llm.providerName === provider,
+        );
+        expect(LLMClass).toBeDefined();
+        if (!LLMClass) {
+          return;
+        }
+
+        const llm = new LLMClass({ model });
+        const metadata = findModelMetadata(model, provider);
+
+        if (metadata?.contextLength) {
+          expect(llm.contextLength).toEqual(metadata.contextLength);
         } else {
           expect(llm.contextLength).toEqual(DEFAULT_CONTEXT_LENGTH);
         }
-      };
-      describe(`${modelProvider.id}`, () => {
-        modelProvider.models.forEach((llmInfo) => {
-          test(
-            `should have correct context length for ${llmInfo.model}`,
-            testContextLength(llmInfo),
-          );
-        });
       });
+    });
+
+    test("should use default context length when model metadata is missing", () => {
+      const llm = new NoContextDefaultLLM({ model: "missing-model" });
+      expect(llm.contextLength).toEqual(DEFAULT_CONTEXT_LENGTH);
     });
   });
 });

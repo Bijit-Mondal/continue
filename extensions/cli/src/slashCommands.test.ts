@@ -45,7 +45,7 @@ vi.mock("./util/logger.js", () => ({
 // Mock env.js to avoid file operations
 vi.mock("./env.js", () => ({
   env: {
-    continueHome: "/home/test/.continue",
+    continueHome: "/home/test/.tezz",
   },
 }));
 
@@ -80,7 +80,7 @@ vi.mock("core/util/history.js", () => ({
 // Mock session functions
 vi.mock("./session.js", () => ({
   getSessionFilePath: vi.fn(
-    () => "/home/test/.continue/cli-sessions/continue-cli-pid-12345.json",
+    () => "/home/test/.tezz/cli-sessions/tezz-cli-pid-12345.json",
   ),
   hasSession: vi.fn(() => false),
   getCurrentSession: vi.fn(() => {
@@ -209,7 +209,7 @@ describe("slashCommands", () => {
 
       // Mock the session functions for this specific test
       (getSessionFilePath as any).mockReturnValue(
-        "/test-home/.continue/cli-sessions/continue-cli-test-123.json",
+        "/test-home/.tezz/cli-sessions/tezz-cli-test-123.json",
       );
       (getCurrentSession as any).mockReturnValue({
         sessionId: "test-123",
@@ -229,7 +229,7 @@ describe("slashCommands", () => {
 
       expect(result?.output).toContain("Session:");
       expect(result?.output).toContain("Test Session");
-      expect(result?.output).toContain("/test-home/.continue/cli-sessions/");
+      expect(result?.output).toContain("/test-home/.tezz/cli-sessions/");
       expect(result?.output).toContain(".json");
     });
 
@@ -397,6 +397,39 @@ describe("slashCommands", () => {
       expect(result?.newInput).toBe(
         "Analyze the following code for patterns: my code",
       );
+    });
+
+    it("should open the models.dev catalog selector", async () => {
+      const result = await handleSlashCommands("/models", mockAssistant);
+
+      expect(result).toEqual({
+        openModelsCatalogSelector: true,
+        modelsCatalogProvider: undefined,
+      });
+    });
+
+    it("should open the models.dev catalog selector for a provider", async () => {
+      const result = await handleSlashCommands(
+        "/models anthropic",
+        mockAssistant,
+      );
+
+      expect(result).toEqual({
+        openModelsCatalogSelector: true,
+        modelsCatalogProvider: "anthropic",
+      });
+    });
+
+    it("should open the models.dev catalog selector for OpenRouter", async () => {
+      const result = await handleSlashCommands(
+        "/models openrouter",
+        mockAssistant,
+      );
+
+      expect(result).toEqual({
+        openModelsCatalogSelector: true,
+        modelsCatalogProvider: "openrouter",
+      });
     });
   });
 });

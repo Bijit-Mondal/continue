@@ -22,7 +22,7 @@ $ProgressPreference = 'SilentlyContinue'  # Faster downloads
 
 $script:RequiredNodeVersion = [version]"20.20.1"
 $script:PackageName = "@continuedev/cli"
-$script:CliCommand = "cn"
+$script:CliCommand = "tezz"
 $script:FnmInstalled = $false
 $script:FnmPath = "$env:LOCALAPPDATA\fnm"
 

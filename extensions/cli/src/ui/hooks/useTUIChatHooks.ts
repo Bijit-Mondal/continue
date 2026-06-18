@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 
 import { getGitBranch, getGitRemoteUrl, isGitRepo } from "../../util/git.js";
+import type { ProviderSetupResult } from "../ProviderSetupSelector.js";
 import type { ConfigOption, ModelOption } from "../types/selectorTypes.js";
 
 import { useConfigSelector } from "./useConfigSelector.js";
+import { useModelsCatalogSelector } from "./useModelsCatalogSelector.js";
 import { useModelSelector } from "./useModelSelector.js";
 
 // Helper function to get repo info for responsive display
@@ -128,10 +130,14 @@ export function useSelectors(
   setStaticRefreshTrigger?: React.Dispatch<React.SetStateAction<number>>,
 ): {
   handleConfigSelect: (config: ConfigOption) => Promise<void>;
+  handleProviderSetup: (result: ProviderSetupResult) => Promise<void>;
   handleModelSelect: (model: ModelOption) => Promise<void>;
+  handleModelsCatalogSelect: (selection: {
+    providerId: string;
+    modelId: string;
+  }) => Promise<void>;
 } {
-  const { handleConfigSelect } = useConfigSelector({
-    configPath,
+  const { handleConfigSelect, handleProviderSetup } = useConfigSelector({
     onMessage: (message) => {
       // Convert message to ChatHistoryItem format
       setChatHistory((prev) => [
@@ -143,6 +149,11 @@ export function useSelectors(
       ]);
     },
     handleClear,
+    onRefreshUI: () => {
+      if (setStaticRefreshTrigger) {
+        setStaticRefreshTrigger((prev) => prev + 1);
+      }
+    },
   });
 
   const { handleModelSelect } = useModelSelector({
@@ -164,8 +175,27 @@ export function useSelectors(
     },
   });
 
+  const { handleModelsCatalogSelect } = useModelsCatalogSelector({
+    onMessage: (message) => {
+      setChatHistory((prev) => [
+        ...prev,
+        {
+          message: { role: message.role, content: message.content },
+          contextItems: [],
+        },
+      ]);
+    },
+    onRefreshUI: () => {
+      if (setStaticRefreshTrigger) {
+        setStaticRefreshTrigger((prev) => prev + 1);
+      }
+    },
+  });
+
   return {
     handleConfigSelect,
     handleModelSelect,
+    handleModelsCatalogSelect,
+    handleProviderSetup,
   };
 }

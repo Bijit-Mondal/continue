@@ -6,7 +6,6 @@ import {
   AssistantUnrolled,
   mergeUnrolledAssistants,
   PackageIdentifier,
-  RegistryClient,
   unrollAssistant,
   unrollAssistantFromContent,
 } from "@continuedev/config-yaml";
@@ -22,6 +21,11 @@ import {
 } from "./auth/workos.js";
 import { CLIPlatformClient } from "./CLIPlatformClient.js";
 import { env } from "./env.js";
+import { ModelsDevRegistryClient } from "./modelsDevRegistry.js";
+
+function createRegistry(rootPath?: string) {
+  return new ModelsDevRegistryClient({ rootPath });
+}
 
 export interface ConfigLoadResult {
   config: AssistantUnrolled;
@@ -302,7 +306,7 @@ async function loadUserAssistantWithFallback(
 }
 
 /**
- * Loads default config.yaml from ~/.continue/config.yaml
+ * Loads default config.yaml from ~/.tezz/config.yaml
  */
 async function loadLocalConfigYaml(
   accessToken: string | null,
@@ -366,9 +370,7 @@ export async function unrollPackageIdentifiersAsConfigYaml(
       fileUri: "",
     },
     "name: Agent\nschema: v1\nversion: 0.0.1",
-    new RegistryClient({
-      rootPath: undefined, // TODO verify this doesn't cause issues with file blocks
-    }),
+    createRegistry(undefined),
     {
       currentUserSlug: "",
       platformClient: new CLIPlatformClient(organizationId, apiClient),
@@ -398,12 +400,11 @@ async function unrollAssistantWithConfig(
 ): Promise<AssistantUnrolled> {
   const unrollResult = await unrollAssistant(
     packageIdentifier,
-    new RegistryClient({
-      rootPath:
-        packageIdentifier.uriType === "file"
-          ? dirname(packageIdentifier.fileUri)
-          : undefined,
-    }),
+    createRegistry(
+      packageIdentifier.uriType === "file"
+        ? dirname(packageIdentifier.fileUri)
+        : undefined,
+    ),
     {
       currentUserSlug: "",
       alwaysUseProxy: false,

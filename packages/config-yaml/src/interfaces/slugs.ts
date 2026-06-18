@@ -155,10 +155,19 @@ export function packageSlugsEqual(
 }
 
 export function decodeFullSlug(fullSlug: string): FullSlug {
-  const [ownerSlug, packageSlug, versionSlug] = fullSlug.split(/[/@]/);
+  const atIndex = fullSlug.lastIndexOf("@");
+  const slugPart = atIndex === -1 ? fullSlug : fullSlug.slice(0, atIndex);
+  const versionSlug =
+    atIndex === -1 ? VirtualTags.Latest : fullSlug.slice(atIndex + 1);
+
+  const slashIndex = slugPart.indexOf("/");
+  if (slashIndex === -1) {
+    throw new Error(`Invalid slug format: ${fullSlug}`);
+  }
+
   return {
-    ownerSlug,
-    packageSlug,
+    ownerSlug: slugPart.slice(0, slashIndex),
+    packageSlug: slugPart.slice(slashIndex + 1),
     versionSlug: versionSlug || VirtualTags.Latest,
   };
 }

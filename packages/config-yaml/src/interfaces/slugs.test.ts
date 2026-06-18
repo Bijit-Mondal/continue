@@ -40,6 +40,16 @@ describe("PackageSlug", () => {
     expect(decoded.versionSlug).toBe(VirtualTags.Latest);
   });
 
+  it("should encode/decode full slugs with nested package paths", () => {
+    const decoded = decodeFullSlug("openrouter/anthropic/claude-fable-latest");
+
+    expect(decoded).toEqual({
+      ownerSlug: "openrouter",
+      packageSlug: "anthropic/claude-fable-latest",
+      versionSlug: VirtualTags.Latest,
+    });
+  });
+
   it("should encode/decode FQSN with single package", () => {
     const testFQSN = {
       packageSlugs: [

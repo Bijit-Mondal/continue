@@ -103,7 +103,11 @@ describe("Ctrl+C behavior", () => {
   describe("ConfigSelector component", () => {
     it("calls onCancel when Ctrl+C is pressed", () => {
       const { stdin } = render(
-        <ConfigSelector onSelect={mockOnSelect} onCancel={mockOnCancel} />,
+        <ConfigSelector
+          onSelect={mockOnSelect}
+          onProviderSetup={vi.fn().mockResolvedValue(undefined)}
+          onCancel={mockOnCancel}
+        />,
       );
 
       // Simulate Ctrl+C

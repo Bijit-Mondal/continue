@@ -35,7 +35,7 @@ export const SYSTEM_SLASH_COMMANDS: SystemCommand[] = [
   },
   {
     name: "update",
-    description: "Update the Continue CLI",
+    description: "Update the Tezz CLI",
     category: "system",
   },
   {
@@ -49,8 +49,13 @@ export const SYSTEM_SLASH_COMMANDS: SystemCommand[] = [
     category: "system",
   },
   {
+    name: "models",
+    description: "Browse and add models from the models.dev catalog",
+    category: "system",
+  },
+  {
     name: "config",
-    description: "Switch configuration",
+    description: "Manage configuration and add provider API keys",
     category: "system",
   },
   {
@@ -110,7 +115,7 @@ export const SYSTEM_SLASH_COMMANDS: SystemCommand[] = [
   },
   {
     name: "import-skill",
-    description: "Import a skill from a URL or name into ~/.continue/skills",
+    description: "Import a skill from a URL or name into ~/.tezz/skills",
     category: "system",
   },
   {

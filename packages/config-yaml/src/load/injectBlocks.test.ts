@@ -11,7 +11,10 @@ class MockRegistry implements Registry {
     this.content[id] = content;
   }
 
-  async getContent(id: PackageIdentifier): Promise<string> {
+  async getContent(
+    id: PackageIdentifier,
+    _options?: import("../interfaces/index.js").RegistryGetContentOptions,
+  ): Promise<string> {
     const key =
       id.uriType === "file"
         ? id.fileUri

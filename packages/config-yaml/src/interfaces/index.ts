@@ -9,8 +9,15 @@ import {
 /**
  * A registry stores the content of packages
  */
+export interface RegistryGetContentOptions {
+  inputs?: Record<string, string | undefined>;
+}
+
 export interface Registry {
-  getContent(fullSlug: PackageIdentifier): Promise<string>;
+  getContent(
+    fullSlug: PackageIdentifier,
+    options?: RegistryGetContentOptions,
+  ): Promise<string>;
 }
 export type SecretNamesMap = Map<FQSN, string>;
 

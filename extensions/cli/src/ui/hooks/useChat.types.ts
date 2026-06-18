@@ -21,6 +21,7 @@ export interface UseChatProps {
   onShowSessionSelector?: () => void;
   onShowJobsSelector?: () => void;
   onShowExportSelector?: () => void;
+  onShowModelsCatalogSelector?: (providerId?: string) => void;
   onReload?: () => Promise<void>;
   onClear?: () => void;
   onRefreshStatic?: () => void;
@@ -70,6 +71,8 @@ export interface SlashCommandResult {
   openSessionSelector?: boolean;
   openJobsSelector?: boolean;
   openExportSelector?: boolean;
+  openModelsCatalogSelector?: boolean;
+  modelsCatalogProvider?: string;
   compact?: boolean;
   diffContent?: string;
 }

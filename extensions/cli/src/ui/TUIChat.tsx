@@ -69,7 +69,7 @@ async function loadAndSetSession(
 
     // Set the session ID so future operations use this session
     process.env.CONTINUE_CLI_TEST_SESSION_ID = sessionId.replace(
-      "continue-cli-",
+      "tezz-cli-",
       "",
     );
 
@@ -245,6 +245,8 @@ const TUIChat: React.FC<TUIChatProps> = ({
     onShowSessionSelector: () => navigateTo("session"),
     onShowJobsSelector: () => navigateTo("jobs"),
     onShowExportSelector: () => navigateTo("export"),
+    onShowModelsCatalogSelector: (providerId?: string) =>
+      navigateTo("models", { providerId }),
     onReload: handleReload,
     onClear: handleClear,
     onRefreshStatic: () => setStaticRefreshTrigger((prev) => prev + 1),
@@ -270,7 +272,12 @@ const TUIChat: React.FC<TUIChatProps> = ({
 
   const { renderMessage } = useMessageRenderer();
 
-  const { handleConfigSelect, handleModelSelect } = useSelectors(
+  const {
+    handleConfigSelect,
+    handleModelSelect,
+    handleModelsCatalogSelect,
+    handleProviderSetup,
+  } = useSelectors(
     configPath,
     setChatHistory,
     handleClear,
@@ -451,7 +458,10 @@ const TUIChat: React.FC<TUIChatProps> = ({
           isScreenActive={isScreenActive}
           services={services}
           handleConfigSelect={handleConfigSelect}
+          handleProviderSetup={handleProviderSetup}
           handleModelSelect={handleModelSelect}
+          handleModelsCatalogSelect={handleModelsCatalogSelect}
+          modelsCatalogProviderId={navState.screenData?.providerId}
           handleSessionSelect={handleSessionSelect}
           handleExportSession={handleExportSession}
           handleReload={handleReload}

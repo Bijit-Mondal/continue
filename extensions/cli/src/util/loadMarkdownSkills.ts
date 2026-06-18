@@ -3,7 +3,7 @@ import fsPromises from "fs/promises";
 import * as path from "path";
 
 import { parseMarkdownRule } from "@continuedev/config-yaml";
-import { WalkerSync } from "ignore-walk";
+import ignoreWalk from "ignore-walk";
 import { z } from "zod";
 
 import { env } from "../env.js";
@@ -44,13 +44,11 @@ function getFilePathsInSkillDirectory(
   const skillDir = path.dirname(skillFilePath);
   if (!fs.existsSync(skillDir)) return [];
 
-  const walker = new WalkerSync({
+  const files = ignoreWalk.sync({
     path: skillDir,
     includeEmpty: false,
     follow: false,
   });
-
-  const files = walker.start().result as string[];
   return files
     .map((filePath) => path.join(skillDir, filePath))
     .filter((filePath) => !filePath.endsWith("SKILL.md"))
@@ -93,7 +91,7 @@ export async function loadMarkdownSkills(): Promise<LoadSkillsResult> {
 
   try {
     const skillsDirs = [
-      path.join(cwd, ".continue", SKILLS_DIR),
+      path.join(cwd, ".tezz", SKILLS_DIR),
       path.join(cwd, ".claude", SKILLS_DIR),
       path.join(env.continueHome, SKILLS_DIR),
     ];

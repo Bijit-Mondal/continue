@@ -47,14 +47,14 @@ runTest("Bundle file exists", () => {
   if (!existsSync(resolve(__dirname, "dist/index.js"))) {
     throw new Error("dist/index.js not found");
   }
-  if (!existsSync(resolve(__dirname, "dist/cn.js"))) {
-    throw new Error("dist/cn.js not found");
+  if (!existsSync(resolve(__dirname, "dist/tezz.js"))) {
+    throw new Error("dist/tezz.js not found");
   }
 });
 
 // Test 2: Check if wrapper script is executable
 runTest("Wrapper script has shebang", () => {
-  const content = readFileSync(resolve(__dirname, "dist/cn.js"), "utf8");
+  const content = readFileSync(resolve(__dirname, "dist/tezz.js"), "utf8");
   if (!content.startsWith("#!/usr/bin/env node")) {
     throw new Error("Wrapper script missing shebang");
   }
@@ -64,9 +64,9 @@ runTest("Wrapper script has shebang", () => {
 function getCLICommand(args = "") {
   const isWindows = process.platform === "win32";
   if (isWindows) {
-    return `node dist/cn.js ${args}`;
+    return `node dist/tezz.js ${args}`;
   } else {
-    return `./dist/cn.js ${args}`;
+    return `./dist/tezz.js ${args}`;
   }
 }
 
@@ -203,7 +203,7 @@ runTest("No missing runtime dependencies", () => {
 runTest("CLI works via npm link", () => {
   try {
     // Simply test that we can execute with node directly
-    const output = execCommand("node dist/cn.js --version 2>&1");
+    const output = execCommand("node dist/tezz.js --version 2>&1");
     const packageJson = JSON.parse(
       readFileSync(resolve(__dirname, "package.json"), "utf8"),
     );

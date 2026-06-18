@@ -13,7 +13,9 @@ import type {
 } from "../hooks/useChat.types.js";
 import { JobsSelector } from "../JobsSelector.js";
 import { MCPSelector } from "../MCPSelector.js";
+import { ModelsCatalogSelector } from "../ModelsCatalogSelector.js";
 import { ModelSelector } from "../ModelSelector.js";
+import type { ProviderSetupResult } from "../ProviderSetupSelector.js";
 import type { ConfigOption, ModelOption } from "../types/selectorTypes.js";
 import { UpdateSelector } from "../UpdateSelector.js";
 
@@ -24,7 +26,13 @@ interface ScreenContentProps {
   isScreenActive: (screen: NavigationScreen) => boolean;
   services: any;
   handleConfigSelect: (config: ConfigOption) => Promise<void>;
+  handleProviderSetup: (result: ProviderSetupResult) => Promise<void>;
   handleModelSelect: (model: ModelOption) => Promise<void>;
+  handleModelsCatalogSelect: (selection: {
+    providerId: string;
+    modelId: string;
+  }) => Promise<void>;
+  modelsCatalogProviderId?: string;
   handleSessionSelect: (sessionId: string) => Promise<void>;
   handleExportSession: (sessionId: string) => Promise<void>;
   handleReload: () => Promise<void>;
@@ -66,7 +74,10 @@ export const ScreenContent: React.FC<ScreenContentProps> = ({
   isScreenActive,
   services,
   handleConfigSelect,
+  handleProviderSetup,
   handleModelSelect,
+  handleModelsCatalogSelect,
+  modelsCatalogProviderId,
   handleSessionSelect,
   handleExportSession,
   handleReload: _handleReload,
@@ -99,6 +110,7 @@ export const ScreenContent: React.FC<ScreenContentProps> = ({
     return (
       <ConfigSelector
         onSelect={handleConfigSelect}
+        onProviderSetup={handleProviderSetup}
         onCancel={closeCurrentScreen}
       />
     );
@@ -117,6 +129,16 @@ export const ScreenContent: React.FC<ScreenContentProps> = ({
     return (
       <ModelSelector
         onSelect={handleModelSelect}
+        onCancel={closeCurrentScreen}
+      />
+    );
+  }
+
+  if (isScreenActive("models")) {
+    return (
+      <ModelsCatalogSelector
+        initialProviderId={modelsCatalogProviderId}
+        onSelect={handleModelsCatalogSelect}
         onCancel={closeCurrentScreen}
       />
     );

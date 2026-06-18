@@ -84,7 +84,7 @@ async function main() {
     await buildPackagesInParallel(["config-types", "terminal-security"]);
 
     // Phase 2: Build packages that depend on config-types
-    await buildPackagesInParallel(["fetch", "config-yaml", "llm-info"]);
+    await buildPackagesInParallel(["fetch", "config-yaml"]);
 
     // Phase 3: Build packages that depend on other local packages
     await buildPackagesInParallel(["openai-adapters", "continue-sdk"]);

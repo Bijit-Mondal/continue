@@ -1,15 +1,17 @@
 import { Box, Text } from "ink";
 import React, { useMemo } from "react";
 
-// Array of helpful tips for Continue CLI users
-const CONTINUE_CLI_TIPS = [
+// Array of helpful tips for Tezz CLI users
+const TEZZ_CLI_TIPS = [
   "Use `/help` to learn keyboard shortcuts",
-  "Press escape to pause cn, and press enter to continue",
+  "Press escape to pause tezz, and press enter to continue",
   "Use arrow keys (↑/↓) to navigate through your input history",
   'Multi-line input is supported by typing "\\" and pressing enter',
-  "Use `cn ls` or `/resume` to resume a previous conversation",
-  'Run `cn` with the `-p` flag for headless mode. For example: `cn -p "Generate a commit message for the current changes. Output _only_ the commit message and nothing else."`',
-  "Use the /init slash command to generate an AGENTS.md file. This will help `cn` understand your codebase and generate better responses.",
+  "Use `tezz ls` or `/resume` to resume a previous conversation",
+  'Run `tezz` with the `-p` flag for headless mode. For example: `tezz -p "Generate a commit message for the current changes. Output _only_ the commit message and nothing else."`',
+  "Use the /init slash command to generate an AGENTS.md file. This will help `tezz` understand your codebase and generate better responses.",
+  "Use `/config` to add a provider API key or reload ~/.tezz/config.yaml.",
+  "Use `/models` to browse the models.dev catalog and add more models for a provider that already has an API key configured.",
 ];
 
 interface TipsDisplayProps {
@@ -17,14 +19,13 @@ interface TipsDisplayProps {
 }
 
 /**
- * Randomly selects and displays a tip from the CONTINUE_CLI_TIPS array.
+ * Randomly selects and displays a tip from the TEZZ_CLI_TIPS array.
  * Should only be shown 1 in 5 times (20% chance).
  */
 const TipsDisplay: React.FC<TipsDisplayProps> = () => {
   // Randomly select a tip, memoized to prevent changing on re-renders
   const randomTip = useMemo(
-    () =>
-      CONTINUE_CLI_TIPS[Math.floor(Math.random() * CONTINUE_CLI_TIPS.length)],
+    () => TEZZ_CLI_TIPS[Math.floor(Math.random() * TEZZ_CLI_TIPS.length)],
     [],
   );
 
@@ -49,4 +50,4 @@ export function shouldShowTip(): boolean {
   return Math.random() < 0.2; // 20% chance (1 in 5)
 }
 
-export { CONTINUE_CLI_TIPS, TipsDisplay };
+export { TEZZ_CLI_TIPS, TipsDisplay };

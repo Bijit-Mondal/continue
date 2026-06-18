@@ -68,10 +68,6 @@ try {
         __dirname,
         "../../packages/fetch/dist/index.js",
       ),
-      "@continuedev/llm-info": resolve(
-        __dirname,
-        "../../packages/llm-info/dist/index.js",
-      ),
       "@continuedev/terminal-security": resolve(
         __dirname,
         "../../packages/terminal-security/dist/index.js",
@@ -91,7 +87,7 @@ const require = __createRequire(import.meta.url);`,
   // Create wrapper script with shebang that explicitly runs the CLI
   // Note: We must call runCli(); a plain dynamic import will not execute the CLI.
   writeFileSync(
-    "dist/cn.js",
+    "dist/tezz.js",
     "#!/usr/bin/env node\nimport { runCli } from './index.js';\nawait runCli();\n",
   );
   // Copy worker files needed by JSDOM
@@ -108,7 +104,7 @@ const require = __createRequire(import.meta.url);`,
   }
 
   // Make the wrapper script executable
-  chmodSync("dist/cn.js", 0o755);
+  chmodSync("dist/tezz.js", 0o755);
 
   // Calculate bundle size
   const bundleSize = result.metafile.outputs["dist/index.js"].bytes;

@@ -1,9 +1,22 @@
+import { getDefaultOnboardingModelForProvider } from "core/llm/modelsDevBlockTemplate.js";
 import { parse } from "yaml";
 
 import { updateAnthropicModelInYaml } from "./yamlConfigUpdater.js";
 
+function expectAnthropicModels(result: string, apiKey: string) {
+  expect(result).toMatch(/uses: anthropic\//);
+  expect(result).toContain(`ANTHROPIC_API_KEY: ${apiKey}`);
+}
+
+function countProviderModels(result: string, providerId: string): number {
+  const matches = result.match(new RegExp(`uses: ${providerId}/`, "g"));
+  return matches?.length ?? 0;
+}
+
 describe("updateAnthropicModelInYaml", () => {
   const testApiKey = "sk-ant-test123456789";
+  const defaultAnthropicModel =
+    getDefaultOnboardingModelForProvider("anthropic")?.id;
 
   describe("empty or invalid input", () => {
     it("should create new config from empty string", () => {
@@ -12,8 +25,10 @@ describe("updateAnthropicModelInYaml", () => {
       expect(result).toContain("name: Main Config");
       expect(result).toContain("version: 1.0.0");
       expect(result).toContain("schema: v1");
-      expect(result).toContain("uses: anthropic/claude-sonnet-4-6");
-      expect(result).toContain("ANTHROPIC_API_KEY: sk-ant-test123456789");
+      expect(defaultAnthropicModel).toBeTruthy();
+      expect(result).toContain(`uses: anthropic/${defaultAnthropicModel}`);
+      expect(countProviderModels(result, "anthropic")).toBe(1);
+      expectAnthropicModels(result, testApiKey);
     });
 
     it("should create new config from invalid YAML", () => {
@@ -21,8 +36,7 @@ describe("updateAnthropicModelInYaml", () => {
       const result = updateAnthropicModelInYaml(invalidYaml, testApiKey);
 
       expect(result).toContain("name: Main Config");
-      expect(result).toContain("uses: anthropic/claude-sonnet-4-6");
-      expect(result).toContain("ANTHROPIC_API_KEY: sk-ant-test123456789");
+      expectAnthropicModels(result, testApiKey);
     });
   });
 
@@ -44,11 +58,10 @@ models:
       expect(result).toContain("# My Continue config");
       expect(result).toContain("# List of available models");
       expect(result).toContain("uses: openai/gpt-4");
-      expect(result).toContain("uses: anthropic/claude-sonnet-4-6");
-      expect(result).toContain("ANTHROPIC_API_KEY: sk-ant-test123456789");
+      expectAnthropicModels(result, testApiKey);
     });
 
-    it("should preserve comments when updating existing model", () => {
+    it("should replace existing anthropic models while preserving comments", () => {
       const yamlWithComments = `# My Continue config
 name: Main Config
 version: 1.0.0
@@ -64,14 +77,13 @@ models:
 
       expect(result).toContain("# My Continue config");
       expect(result).toContain("# List of available models");
-      expect(result).toContain("uses: anthropic/claude-sonnet-4-6");
-      expect(result).toContain("ANTHROPIC_API_KEY: sk-ant-test123456789");
+      expectAnthropicModels(result, testApiKey);
       expect(result).not.toContain("old-key");
     });
   });
 
   describe("model management", () => {
-    it("should add new anthropic model when none exists", () => {
+    it("should add anthropic models when none exist", () => {
       const existingConfig = `name: Main Config
 version: 1.0.0
 schema: v1
@@ -84,17 +96,19 @@ models:
       const result = updateAnthropicModelInYaml(existingConfig, testApiKey);
 
       expect(result).toContain("uses: openai/gpt-4");
-      expect(result).toContain("uses: anthropic/claude-sonnet-4-6");
-      expect(result).toContain("ANTHROPIC_API_KEY: sk-ant-test123456789");
+      expectAnthropicModels(result, testApiKey);
       expect(result).toContain("OPENAI_API_KEY: TEST-openai-test");
     });
 
-    it("should update existing anthropic model", () => {
+    it("should update api key on existing anthropic models without removing them", () => {
       const existingConfig = `name: Main Config
 version: 1.0.0
 schema: v1
 models:
   - uses: anthropic/claude-sonnet-4-6
+    with:
+      ANTHROPIC_API_KEY: old-anthropic-key
+  - uses: anthropic/claude-opus-4-6
     with:
       ANTHROPIC_API_KEY: old-anthropic-key
   - uses: openai/gpt-4
@@ -104,17 +118,13 @@ models:
 
       const result = updateAnthropicModelInYaml(existingConfig, testApiKey);
 
-      expect(result).toContain("uses: anthropic/claude-sonnet-4-6");
       expect(result).toContain("uses: openai/gpt-4");
-      expect(result).toContain("ANTHROPIC_API_KEY: sk-ant-test123456789");
+      expect(result).toContain("uses: anthropic/claude-sonnet-4-6");
+      expect(result).toContain("uses: anthropic/claude-opus-4-6");
+      expect(countProviderModels(result, "anthropic")).toBe(2);
+      expect(result).toContain(`ANTHROPIC_API_KEY: ${testApiKey}`);
       expect(result).toContain("OPENAI_API_KEY: TEST-openai-test");
       expect(result).not.toContain("old-anthropic-key");
-
-      // Should only have one anthropic model
-      const anthropicMatches = result.match(
-        /uses: anthropic\/claude-sonnet-4-6/g,
-      );
-      expect(anthropicMatches).toHaveLength(1);
     });
 
     it("should handle config with no models array", () => {
@@ -130,8 +140,7 @@ schema: v1
 
       expect(result).toContain("name: Main Config");
       expect(result).toContain("models:");
-      expect(result).toContain("uses: anthropic/claude-sonnet-4-6");
-      expect(result).toContain("ANTHROPIC_API_KEY: sk-ant-test123456789");
+      expectAnthropicModels(result, testApiKey);
     });
 
     it("should handle config with empty models array", () => {
@@ -147,8 +156,7 @@ models: []
       );
 
       expect(result).toContain("name: Main Config");
-      expect(result).toContain("uses: anthropic/claude-sonnet-4-6");
-      expect(result).toContain("ANTHROPIC_API_KEY: sk-ant-test123456789");
+      expectAnthropicModels(result, testApiKey);
     });
   });
 
@@ -162,7 +170,6 @@ models:
 
       const result = updateAnthropicModelInYaml(input, testApiKey);
 
-      // Should not throw when parsing
       expect(() => {
         parse(result);
       }).not.toThrow();
@@ -189,8 +196,7 @@ models: "not an array"
 
       const result = updateAnthropicModelInYaml(malformedConfig, testApiKey);
 
-      expect(result).toContain("uses: anthropic/claude-sonnet-4-6");
-      expect(result).toContain("ANTHROPIC_API_KEY: sk-ant-test123456789");
+      expectAnthropicModels(result, testApiKey);
     });
 
     it("should handle different API key formats", () => {

@@ -19,7 +19,7 @@ export interface PermissionsYamlConfig {
 }
 
 /**
- * Loads permissions from ~/.continue/permissions.yaml
+ * Loads permissions from ~/.tezz/permissions.yaml
  * Returns null if file doesn't exist or can't be parsed
  */
 export function loadPermissionsYaml(): PermissionsYamlConfig | null {
@@ -159,7 +159,7 @@ export async function ensurePermissionsYamlExists(): Promise<void> {
 
   // Create file if it doesn't exist
   if (!fs.existsSync(PERMISSIONS_YAML_PATH)) {
-    const defaultContent = `# cn tool permissions
+    const defaultContent = `# tezz tool permissions
 
 # Tools that are automatically allowed without prompting
 allow: []

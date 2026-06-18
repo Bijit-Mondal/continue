@@ -14,7 +14,7 @@ export interface SmokeTestContext {
  * Creates an isolated test directory and resolves the CLI entry point.
  */
 export async function createSmokeContext(): Promise<SmokeTestContext> {
-  const cliPath = path.resolve("dist/cn.js");
+  const cliPath = path.resolve("dist/tezz.js");
 
   try {
     await fs.access(cliPath);
@@ -25,10 +25,10 @@ export async function createSmokeContext(): Promise<SmokeTestContext> {
   const testDir = await fs.mkdtemp(path.join(os.tmpdir(), "cn-smoke-"));
 
   // Create onboarding flag so the CLI skips onboarding flow
-  const continueDir = path.join(testDir, ".continue");
-  await fs.mkdir(continueDir, { recursive: true });
+  const tezzDir = path.join(testDir, ".tezz");
+  await fs.mkdir(tezzDir, { recursive: true });
   await fs.writeFile(
-    path.join(continueDir, ".onboarding_complete"),
+    path.join(tezzDir, ".onboarding_complete"),
     new Date().toISOString(),
   );
 
@@ -110,7 +110,7 @@ models:
 }
 
 /**
- * Runs `cn` (headless) and returns stdout/stderr/exitCode.
+ * Runs `tezz` (headless) and returns stdout/stderr/exitCode.
  */
 export async function runHeadless(
   ctx: SmokeTestContext,
@@ -141,7 +141,7 @@ export async function runHeadless(
 }
 
 /**
- * Spawns `cn serve` as a background subprocess and returns it along with
+ * Spawns `tezz serve` as a background subprocess and returns it along with
  * a helper to wait for the server to be ready.
  */
 export function spawnServe(

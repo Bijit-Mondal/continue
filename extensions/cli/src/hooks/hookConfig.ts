@@ -2,16 +2,16 @@
  * Hook configuration loader.
  *
  * Loads hooks from settings files in the same locations as Claude Code:
- * - ~/.continue/settings.json  (user-global)
- * - .continue/settings.json    (project, committable)
- * - .continue/settings.local.json (project-local, gitignored)
+ * - ~/.tezz/settings.json  (user-global)
+ * - .tezz/settings.json    (project, committable)
+ * - .tezz/settings.local.json (project-local, gitignored)
  *
  * Also supports Claude Code's native locations for cross-compatibility:
  * - ~/.claude/settings.json
  * - .claude/settings.json
  * - .claude/settings.local.json
  *
- * Hooks from all sources are merged (project > user, continue > claude).
+ * Hooks from all sources are merged (project > user, tezz > claude).
  */
 
 import * as fs from "fs";
@@ -72,21 +72,20 @@ function mergeHooksConfigs(
  */
 function getSettingsFilePaths(cwd: string, homeDir?: string): string[] {
   const home = homeDir ?? os.homedir();
-  const continueHome =
-    process.env.CONTINUE_GLOBAL_DIR || path.join(home, ".continue");
+  const tezzHome = process.env.CONTINUE_GLOBAL_DIR || path.join(home, ".tezz");
 
   return [
     // User-global (lowest precedence)
     path.join(home, ".claude", "settings.json"),
-    path.join(continueHome, "settings.json"),
+    path.join(tezzHome, "settings.json"),
 
     // Project-level
     path.join(cwd, ".claude", "settings.json"),
-    path.join(cwd, ".continue", "settings.json"),
+    path.join(cwd, ".tezz", "settings.json"),
 
     // Project-local (highest precedence)
     path.join(cwd, ".claude", "settings.local.json"),
-    path.join(cwd, ".continue", "settings.local.json"),
+    path.join(cwd, ".tezz", "settings.local.json"),
   ];
 }
 

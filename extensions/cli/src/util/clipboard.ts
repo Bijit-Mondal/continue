@@ -50,6 +50,42 @@ export async function checkClipboardForImage(): Promise<boolean> {
 }
 
 /**
+ * Get plain text from the clipboard.
+ */
+export async function getClipboardText(): Promise<string | null> {
+  try {
+    const platform = os.platform();
+
+    if (platform === "darwin") {
+      const { stdout } = await execAsync("pbpaste");
+      return stdout;
+    }
+
+    if (platform === "win32") {
+      const { stdout } = await execAsync(
+        'powershell -command "Get-Clipboard -Format Text -Raw"',
+      );
+      return stdout;
+    }
+
+    if (platform === "linux") {
+      try {
+        const { stdout } = await execAsync("wl-paste --no-newline");
+        return stdout;
+      } catch {
+        const { stdout } = await execAsync("xclip -selection clipboard -o");
+        return stdout;
+      }
+    }
+
+    return null;
+  } catch (error) {
+    logger.debug("Error reading text from clipboard:", error);
+    return null;
+  }
+}
+
+/**
  * Get image from clipboard as a Buffer
  * @returns Promise<Buffer | null> - Image buffer if available, null otherwise
  */

@@ -54,7 +54,7 @@ models:
     // Create onboarding flag to skip onboarding
     const onboardingFlagPath = path.join(
       context.testDir,
-      ".continue",
+      ".tezz",
       ".onboarding_complete",
     );
     await fs.mkdir(path.dirname(onboardingFlagPath), { recursive: true });
@@ -88,7 +88,7 @@ models:
       args: ["-p", "test prompt"],
       env: {
         ANTHROPIC_API_KEY: "TEST-test-invalid-key-format",
-        CONTINUE_GLOBAL_DIR: context.testDir + "/.continue",
+        CONTINUE_GLOBAL_DIR: context.testDir + "/.tezz",
       },
       expectError: true, // API call should fail with invalid key
       timeout: 15000,

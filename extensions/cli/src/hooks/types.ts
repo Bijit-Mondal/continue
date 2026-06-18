@@ -1,8 +1,8 @@
 /**
- * Claude Code-compatible hooks system for Continue CLI.
+ * Claude Code-compatible hooks system for Tezz CLI.
  *
  * These types match the exact schemas from Claude Code so that any hook
- * written for `claude` works with `cn` out of the box.
+ * written for `claude` works with `tezz` out of the box.
  */
 
 // ---------------------------------------------------------------------------

@@ -13,7 +13,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
-const globalDir = fs.mkdtempSync(path.join(os.tmpdir(), "continue-cli-test-"));
+const globalDir = fs.mkdtempSync(path.join(os.tmpdir(), "tezz-cli-test-"));
 process.env.CONTINUE_GLOBAL_DIR = globalDir;
 
 // Best-effort cleanup of this worker's temp dir when the process exits.

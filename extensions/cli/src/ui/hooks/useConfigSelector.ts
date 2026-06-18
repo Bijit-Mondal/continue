@@ -2,12 +2,15 @@ import { exec } from "child_process";
 import * as path from "path";
 
 import { env } from "../../env.js";
+import { createOrUpdateConfig } from "../../onboarding.js";
 import { services } from "../../services/index.js";
+import { getProviderLabel } from "../../util/providerSetup.js";
 import { useNavigation } from "../context/NavigationContext.js";
+import type { ProviderSetupResult } from "../ProviderSetupSelector.js";
 
 interface ConfigOption {
   id: string;
-  name: string;
+  name?: string;
   type: "local" | "assistant" | "create";
   slug?: string;
   organizationId?: string | null;
@@ -21,6 +24,7 @@ interface UseConfigSelectorProps {
     messageType: "system";
   }) => void;
   handleClear: () => void;
+  onRefreshUI?: () => void;
 }
 
 const CONFIG_PATH = path.join(env.continueHome, "config.yaml");
@@ -28,15 +32,33 @@ const CONFIG_PATH = path.join(env.continueHome, "config.yaml");
 export function useConfigSelector({
   onMessage,
   handleClear,
+  onRefreshUI,
 }: UseConfigSelectorProps) {
   const { closeCurrentScreen } = useNavigation();
+
+  const reloadLocalConfig = async (messagePrefix: string) => {
+    onMessage({
+      role: "system",
+      content: `${messagePrefix} ${CONFIG_PATH}...`,
+      messageType: "system" as const,
+    });
+
+    await services.config.updateConfigPath(CONFIG_PATH);
+    handleClear();
+    onRefreshUI?.();
+
+    onMessage({
+      role: "system",
+      content: `Successfully reloaded ${CONFIG_PATH}`,
+      messageType: "system" as const,
+    });
+  };
 
   const handleConfigSelect = async (config: ConfigOption) => {
     closeCurrentScreen();
 
     if (config.type === "create") {
-      // Open the web browser to create new assistant
-      const url = new URL("https://continue.dev/new");
+      const url = new URL("https://tezz.dev/new");
       url.searchParams.set("type", "assistant");
 
       try {
@@ -71,33 +93,27 @@ export function useConfigSelector({
     }
 
     try {
-      // Show loading message
+      if (config.id === "reload-local") {
+        await reloadLocalConfig("Reloading configuration:");
+        return;
+      }
+
       onMessage({
         role: "system",
-        content: `Switching to configuration: ${config.name}...`,
+        content: "Switching to local config.yaml...",
         messageType: "system" as const,
       });
 
-      let targetConfigPath: string | undefined;
-
-      if (config.type === "local") {
-        targetConfigPath = CONFIG_PATH;
-      } else if (config.type === "assistant" && config.slug) {
-        targetConfigPath = config.slug;
-      }
-
-      await services.config.updateConfigPath(targetConfigPath);
-
+      await services.config.updateConfigPath(CONFIG_PATH);
       handleClear();
+      onRefreshUI?.();
 
-      // Show success message
       onMessage({
         role: "system",
-        content: `Successfully switched to configuration: ${config.name}`,
+        content: "Successfully switched to local config.yaml",
         messageType: "system" as const,
       });
     } catch (error: any) {
-      // Show error message
       onMessage({
         role: "system",
         content: `Failed to switch configuration: ${error.message}`,
@@ -106,7 +122,25 @@ export function useConfigSelector({
     }
   };
 
+  const handleProviderSetup = async ({
+    providerId,
+    apiKey,
+  }: ProviderSetupResult) => {
+    await createOrUpdateConfig(apiKey, providerId);
+    await services.config.updateConfigPath(CONFIG_PATH);
+
+    closeCurrentScreen();
+    onRefreshUI?.();
+
+    onMessage({
+      role: "system",
+      content: `Added ${getProviderLabel(providerId)} to ${CONFIG_PATH}. Use /models to add more models for this provider.`,
+      messageType: "system" as const,
+    });
+  };
+
   return {
     handleConfigSelect,
+    handleProviderSetup,
   };
 }

@@ -54,7 +54,7 @@ export class UpdateService extends BaseService<UpdateServiceState> {
       if (this.currentState.currentVersion === "0.0.0-dev") {
         this.setState({
           status: UpdateStatus.IDLE,
-          message: `Continue CLI`,
+          message: `Tezz CLI`,
         });
         return; // Uncomment to test auto-update behavior in dev
       }
@@ -73,7 +73,7 @@ export class UpdateService extends BaseService<UpdateServiceState> {
       if (!latestVersion) {
         this.setState({
           status: UpdateStatus.IDLE,
-          message: "Continue CLI",
+          message: "Tezz CLI",
           isUpdateAvailable: false,
         });
         return;
@@ -101,7 +101,7 @@ export class UpdateService extends BaseService<UpdateServiceState> {
           status: UpdateStatus.IDLE,
           message: isUpdateAvailable
             ? `Update available: v${latestVersion}`
-            : `Continue CLI v${this.currentState.currentVersion}`,
+            : `Tezz CLI v${this.currentState.currentVersion}`,
           isUpdateAvailable,
           latestVersion,
         });
@@ -110,7 +110,7 @@ export class UpdateService extends BaseService<UpdateServiceState> {
       logger.error("Error checking for updates:", error);
       this.setState({
         status: UpdateStatus.ERROR,
-        message: `Continue CLI v${this.currentState.currentVersion}`,
+        message: `Tezz CLI v${this.currentState.currentVersion}`,
         error,
       });
     }
@@ -202,19 +202,19 @@ export class UpdateService extends BaseService<UpdateServiceState> {
         )}`,
       );
 
-      // Halt/clean up parent cn process
+      // Halt/clean up parent tezz process
       try {
         // Remove all input listeners
         global.clearTimeout = () => {};
         global.clearInterval = () => {};
         process.stdin.removeAllListeners();
         process.stdin.pause();
-        // console.clear(); // Don't want to clear things that were in console before cn started
+        // console.clear(); // Don't want to clear things that were in console before tezz started
       } catch (e) {
         logger.debug("Error cleaning up terminal:", e);
       }
 
-      // Spawn a new detached cn process
+      // Spawn a new detached tezz process
       const child = spawn(nodeExecutable, [entryPoint, ...cliArgs], {
         detached: true,
         stdio: "inherit",

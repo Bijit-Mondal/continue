@@ -49,7 +49,11 @@ vi.mock("./logger.js", () => ({
 }));
 
 // Import after mocks are set up
-import { checkClipboardForImage, getClipboardImage } from "./clipboard.js";
+import {
+  checkClipboardForImage,
+  getClipboardImage,
+  getClipboardText,
+} from "./clipboard.js";
 
 // Get the mock exec async function
 const getMockExecAsync = () =>
@@ -232,6 +236,30 @@ describe("clipboard utilities", () => {
       mockExecAsync.mockRejectedValue(new Error("Unexpected error"));
 
       const result = await getClipboardImage();
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("getClipboardText", () => {
+    it("should read clipboard text on macOS", async () => {
+      const os = await import("os");
+      vi.mocked(os.default.platform).mockReturnValue("darwin");
+      mockExecAsync.mockResolvedValue({
+        stdout: "sk-or-v1-test-key\n",
+        stderr: "",
+      });
+
+      const result = await getClipboardText();
+      expect(result).toBe("sk-or-v1-test-key\n");
+      expect(mockExecAsync).toHaveBeenCalledWith("pbpaste");
+    });
+
+    it("should return null when clipboard text cannot be read", async () => {
+      const os = await import("os");
+      vi.mocked(os.default.platform).mockReturnValue("darwin");
+      mockExecAsync.mockRejectedValue(new Error("clipboard unavailable"));
+
+      const result = await getClipboardText();
       expect(result).toBeNull();
     });
   });

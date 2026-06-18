@@ -722,7 +722,7 @@ export async function resolveBlock(
   registry: Registry,
 ): Promise<AssistantUnrolled> {
   // Retrieve block raw yaml
-  const rawYaml = await registry.getContent(id);
+  const rawYaml = await registry.getContent(id, { inputs });
 
   if (rawYaml === undefined) {
     throw new Error(`Block ${packageIdentifierToShorthandSlug(id)} not found`);

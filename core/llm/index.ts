@@ -1,6 +1,5 @@
 import { ModelRole } from "@continuedev/config-yaml";
 import { fetchwithRequestOptions } from "@continuedev/fetch";
-import { findLlmInfo } from "@continuedev/llm-info";
 import {
   BaseLlmApi,
   ChatCompletionCreateParams,
@@ -37,6 +36,7 @@ import { Logger } from "../util/Logger.js";
 import mergeJson from "../util/merge.js";
 import { renderChatMessage } from "../util/messageContent.js";
 import { isOllamaInstalled } from "../util/ollamaHelper.js";
+import { TokensBatchingService } from "../util/TokensBatchingService.js";
 import { withExponentialBackoff } from "../util/withExponentialBackoff.js";
 
 import {
@@ -67,6 +67,7 @@ import {
   toFimBody,
 } from "./openaiTypeConverters.js";
 import { applyToolOverrides } from "../tools/applyToolOverrides.js";
+import { findModelMetadata } from "./modelsDevCatalog.js";
 
 export class LLMError extends Error {
   constructor(
@@ -99,6 +100,10 @@ export abstract class BaseLLM implements ILLM {
     return (this.constructor as typeof BaseLLM).providerName;
   }
 
+  /**
+   * This exists because for the continue-proxy, sometimes we want to get the value of the underlying provider that is used on the server
+   * For example, the underlying provider should always be sent with dev data
+   */
   get underlyingProviderName(): string {
     return this.providerName;
   }
@@ -164,6 +169,8 @@ export abstract class BaseLLM implements ILLM {
   apiKeyLocation?: string;
   envSecretLocations?: Record<string, string>;
   apiBase?: string;
+  orgScopeId?: string | null;
+
   onPremProxyUrl?: string | null;
 
   cacheBehavior?: CacheBehavior;
@@ -215,8 +222,15 @@ export abstract class BaseLLM implements ILLM {
     };
 
     this.model = options.model;
-    // Use @continuedev/llm-info package to autodetect certain parameters
-    const llmInfo = findLlmInfo(this.model, this.underlyingProviderName);
+    // Use models.dev metadata to autodetect certain parameters
+    const modelSearchString =
+      this.providerName === "continue-proxy"
+        ? this.model?.split("/").pop() || this.model
+        : this.model;
+    const modelMetadata = findModelMetadata(
+      modelSearchString,
+      this.underlyingProviderName,
+    );
 
     const templateType =
       options.template ?? autodetectTemplateType(options.model);
@@ -226,16 +240,16 @@ export abstract class BaseLLM implements ILLM {
     this.baseAgentSystemMessage = options.baseAgentSystemMessage;
     this.basePlanSystemMessage = options.basePlanSystemMessage;
     this.baseChatSystemMessage = options.baseChatSystemMessage;
-    this._contextLength = options.contextLength ?? llmInfo?.contextLength;
+    this._contextLength = options.contextLength ?? modelMetadata?.contextLength;
     this.maxStopWords = options.maxStopWords ?? this.maxStopWords;
     this.completionOptions = {
       ...options.completionOptions,
       model: options.model || "gpt-4",
       maxTokens:
         options.completionOptions?.maxTokens ??
-        (llmInfo?.maxCompletionTokens
+        (modelMetadata?.maxCompletionTokens
           ? Math.min(
-              llmInfo.maxCompletionTokens,
+              modelMetadata.maxCompletionTokens,
               // Even if the model has a large maxTokens, we don't want to use that every time,
               // because it takes away from the context length
               this.contextLength / 4,
@@ -262,6 +276,7 @@ export abstract class BaseLLM implements ILLM {
     // continueProperties
     this.apiKeyLocation = options.apiKeyLocation;
     this.envSecretLocations = options.envSecretLocations;
+    this.orgScopeId = options.orgScopeId;
     this.apiBase = options.apiBase;
 
     this.onPremProxyUrl = options.onPremProxyUrl;
@@ -349,6 +364,13 @@ export abstract class BaseLLM implements ILLM {
     let promptTokens = this.countTokens(prompt);
     let generatedTokens = this.countTokens(completion);
     let thinkingTokens = thinking ? this.countTokens(thinking) : 0;
+
+    TokensBatchingService.getInstance().addTokens(
+      model,
+      this.providerName,
+      promptTokens,
+      generatedTokens,
+    );
 
     void DevDataSqliteDb.logTokensGenerated(
       model,
@@ -468,6 +490,7 @@ export abstract class BaseLLM implements ILLM {
 
         return resp;
       } catch (e: any) {
+        // Capture all fetch errors to Sentry for monitoring
         Logger.error(e, {
           context: "llm_fetch",
           url: String(input),
@@ -662,6 +685,7 @@ export abstract class BaseLLM implements ILLM {
         undefined,
       );
     } catch (e) {
+      // Capture FIM (Fill-in-the-Middle) completion failures to Sentry
       Logger.error(e as Error, {
         context: "llm_stream_fim",
         model: completionOptions.model,
@@ -792,6 +816,7 @@ export abstract class BaseLLM implements ILLM {
         undefined,
       );
     } catch (e) {
+      // Capture streaming completion failures to Sentry
       Logger.error(e as Error, {
         context: "llm_stream_complete",
         model: completionOptions.model,
@@ -900,6 +925,7 @@ export abstract class BaseLLM implements ILLM {
         undefined,
       );
     } catch (e) {
+      // Capture completion failures to Sentry
       Logger.error(e as Error, {
         context: "llm_complete",
         model: completionOptions.model,
@@ -1285,6 +1311,7 @@ export abstract class BaseLLM implements ILLM {
         usage,
       );
     } catch (e) {
+      // Capture chat streaming failures to Sentry
       Logger.error(e as Error, {
         context: "llm_stream_chat",
         model: completionOptions.model,

@@ -14,6 +14,7 @@ export type NavigationScreen =
   | "chat" // Normal chat interface
   | "config" // Config selector
   | "model" // Model selector
+  | "models" // models.dev catalog browser
   | "mcp" // MCP selector
   | "session" // Session selector
   | "diff" // Full-screen diff overlay

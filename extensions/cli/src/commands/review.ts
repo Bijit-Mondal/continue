@@ -301,12 +301,12 @@ export async function review(options: ReviewOptions = {}): Promise<void> {
     console.log(
       chalk.yellow("\nNo reviews found. To add reviews:\n") +
         chalk.dim(
-          "  1. Create .continue/agents/my-review.md with agent instructions\n",
+          "  1. Create .tezz/agents/my-review.md with agent instructions\n",
         ) +
         chalk.dim(
-          "  2. Or specify an agent: cn review --review-agents org/agent-name\n",
+          "  2. Or specify an agent: tezz review --review-agents org/agent-name\n",
         ) +
-        chalk.dim("  3. Or configure reviews on https://continue.dev\n"),
+        chalk.dim("  3. Or configure reviews on https://tezz.dev\n"),
     );
     process.exit(0);
   }

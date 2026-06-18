@@ -1,5 +1,18 @@
 # @continuedev/llm-info
 
+> [!WARNING]
+> Deprecated in favor of models.dev-backed metadata.
+>
+> Continue now sources model metadata from `https://models.dev/api.json` and stores
+> generated snapshots in `core/llm/modelsDevCatalog.json` (provider-aware) and
+> `core/llm/modelsDevModelIndex.json` (shared lightweight lookup).
+>
+> To refresh metadata, run:
+>
+> `node scripts/update-models-dev-catalog.mjs`
+
+This package remains for backwards compatibility only and should not be used for new code.
+
 A lightweight package providing information about various Large Language Models (LLMs), including embedding, reranking, and other models.
 
 Whereas @continuedev/openai-adapters is responsible for translation between API types, @continuedev/llm-info is concerned with

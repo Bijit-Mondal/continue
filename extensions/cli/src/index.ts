@@ -4,6 +4,8 @@
 import "./init.js";
 
 import { Command } from "commander";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import { chat } from "./commands/chat.js";
 import { checks } from "./commands/checks.js";
@@ -171,9 +173,9 @@ process.on("SIGINT", async () => {
 const program = new Command();
 
 program
-  .name("cn")
+  .name("tezz")
   .description(
-    "Continue CLI - AI-powered development assistant. Starts an interactive session by default, use -p/--print for non-interactive output.",
+    "Tezz CLI - AI-powered development assistant. Starts an interactive session by default, use -p/--print for non-interactive output.",
   )
   .version(getVersion(), "-v, --version", "Display version number");
 
@@ -238,7 +240,7 @@ addCommonOptions(program)
       ask: options.ask,
       exclude: options.exclude,
       isRootCommand: true,
-      commandName: "cn",
+      commandName: "tezz",
     });
 
     if (!validation.isValid) {
@@ -281,12 +283,12 @@ addCommonOptions(program)
         "Error: A prompt is required when using the -p/--print flag, unless --prompt, --agent, or --resume is provided.\n\n",
       );
       safeStderr("Usage examples:\n");
-      safeStderr('  cn -p "please review my current git diff"\n');
-      safeStderr('  echo "hello" | cn -p\n');
-      safeStderr('  cn -p "analyze the code in src/"\n');
-      safeStderr("  cn -p --agent my-org/my-agent\n");
-      safeStderr("  cn -p --prompt my-org/my-prompt\n");
-      safeStderr("  cn -p --resume\n");
+      safeStderr('  tezz -p "please review my current git diff"\n');
+      safeStderr('  echo "hello" | tezz -p\n');
+      safeStderr('  tezz -p "analyze the code in src/"\n');
+      safeStderr("  tezz -p --agent my-org/my-agent\n");
+      safeStderr("  tezz -p --prompt my-org/my-prompt\n");
+      safeStderr("  tezz -p --resume\n");
       await gracefulExit(1);
     }
 
@@ -368,7 +370,7 @@ program.on("command:*", () => {
 });
 
 export async function runCli(): Promise<void> {
-  // Handle internal worker subprocess for cn review
+  // Handle internal worker subprocess for tezz review
   if (process.argv.includes("--internal-review-worker")) {
     const { runReviewWorker } = await import(
       "./commands/review/reviewWorker.js"
@@ -388,4 +390,24 @@ export async function runCli(): Promise<void> {
   process.on("SIGTERM", async () => {
     await gracefulExit(0);
   });
+}
+
+function isDirectCliInvocation(): boolean {
+  const invoked = process.argv[1];
+  if (!invoked) {
+    return false;
+  }
+
+  const current = fileURLToPath(import.meta.url);
+  const resolvedInvoked = path.resolve(invoked);
+
+  return (
+    resolvedInvoked === current ||
+    resolvedInvoked === current.replace(/\.ts$/, ".js") ||
+    resolvedInvoked.replace(/\.js$/, ".ts") === current
+  );
+}
+
+if (isDirectCliInvocation()) {
+  void runCli();
 }

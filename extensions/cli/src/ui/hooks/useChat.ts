@@ -61,6 +61,7 @@ export function useChat({
   onShowSessionSelector,
   onShowJobsSelector,
   onShowExportSelector,
+  onShowModelsCatalogSelector,
   onClear,
   onRefreshStatic,
   isRemoteMode = false,
@@ -452,6 +453,7 @@ export function useChat({
       onShowJobsSelector,
       onShowUpdateSelector,
       onShowExportSelector,
+      onShowModelsCatalogSelector,
       onClear,
     });
 
@@ -840,7 +842,7 @@ export function useChat({
             message: {
               role: "system",
               content:
-                "[Tool canceled - please tell Continue what to do differently]",
+                "[Tool canceled - please tell Tezz what to do differently]",
             },
             contextItems: [],
           },

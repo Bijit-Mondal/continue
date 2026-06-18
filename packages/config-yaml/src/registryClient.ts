@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { Registry } from "./interfaces/index.js";
+import { Registry, RegistryGetContentOptions } from "./interfaces/index.js";
 import { PackageIdentifier } from "./interfaces/slugs.js";
 
 interface RegistryClientOptions {
@@ -14,7 +14,10 @@ export class RegistryClient implements Registry {
     this.rootPath = options.rootPath;
   }
 
-  async getContent(id: PackageIdentifier): Promise<string> {
+  async getContent(
+    id: PackageIdentifier,
+    _options?: RegistryGetContentOptions,
+  ): Promise<string> {
     // Return pre-read content if available (for vscode-remote:// URIs in WSL)
     if (id.uriType === "file" && id.content !== undefined) {
       return id.content;

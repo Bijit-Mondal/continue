@@ -6,6 +6,7 @@
     "tsc:watch:vscode": "tsc --project extensions/vscode/tsconfig.json --watch --noEmit --pretty",
     "tsc:watch:core": "tsc --project core/tsconfig.json --watch --noEmit --pretty",
     "tsc:watch:binary": "tsc --project binary/tsconfig.json --watch --noEmit --pretty",
+    "models:sync": "node scripts/update-models-dev-catalog.mjs",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\" --ignore-path .gitignore --ignore-path .prettierignore",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\" --ignore-path .gitignore --ignore-path .prettierignore",
     "prepare": "husky"

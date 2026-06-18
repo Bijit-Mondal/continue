@@ -1,4 +1,3 @@
-import { allModelProviders } from "@continuedev/llm-info";
 import { LLMOptions } from "../../index.js";
 import OpenAI from "./OpenAI.js";
 
@@ -48,22 +47,6 @@ class CometAPI extends OpenAI {
     // Validate required configuration before calling super
     CometAPI.validateConfig(options);
     super(options);
-
-    // Align contextLength with llm-info for cometapi specifically (non-breaking for others)
-    try {
-      const cometProvider = allModelProviders.find((p) => p.id === "cometapi");
-      const info = cometProvider?.models.find((m) =>
-        m.regex ? m.regex.test(this.model) : m.model === this.model,
-      );
-      if (info?.contextLength) {
-        // Always prefer cometapi-specific llm-info over generic provider matches
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore - accessing protected for targeted fix
-        this._contextLength = info.contextLength;
-      }
-    } catch {
-      // no-op: do not fail construction on metadata issues
-    }
   }
 
   /**

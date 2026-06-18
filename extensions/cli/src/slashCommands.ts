@@ -12,6 +12,7 @@ import { handleInfoSlashCommand } from "./infoScreen.js";
 import { getCurrentSession, updateSessionTitle } from "./session.js";
 import { telemetryService } from "./telemetry/telemetryService.js";
 import { buildImportSkillPrompt } from "./tools/skills.js";
+import { resolveProviderArg } from "./util/modelsCatalog.js";
 import { SlashCommandResult } from "./ui/hooks/useChat.types.js";
 import {
   getSkillSlashCommandName,
@@ -57,7 +58,7 @@ async function handleHelp(_args: string[], _assistant: AssistantConfig) {
 async function handleFork() {
   try {
     const currentSession = getCurrentSession();
-    const forkCommand = `cn --fork ${currentSession.sessionId}`;
+    const forkCommand = `tezz --fork ${currentSession.sessionId}`;
     // Try to copy to clipboard dynamically to avoid hard dependency in tests
     try {
       const clipboardy = await import("clipboardy");
@@ -116,7 +117,7 @@ async function handleSkills(): Promise<SlashCommandResult> {
     return {
       exit: false,
       output: chalk.yellow(
-        "No skills found. Add skills under .continue/skills or .claude/skills.",
+        "No skills found. Add skills under .tezz/skills or .claude/skills.",
       ),
     };
   }
@@ -213,7 +214,7 @@ function handleImport(args: string[]): SlashCommandResult {
       return {
         exit: false,
         output: chalk.red(
-          "Invalid session file: expected a valid Continue exported session (version 1).",
+          "Invalid session file: expected a valid Tezz exported session (version 1).",
         ),
       };
     }
@@ -254,6 +255,25 @@ function handleImport(args: string[]): SlashCommandResult {
   }
 }
 
+function handleModels(args: string[]) {
+  const providerArg = args.join(" ").trim();
+  const providerId = resolveProviderArg(providerArg);
+
+  if (providerArg && !providerId) {
+    return {
+      exit: false,
+      output: chalk.yellow(
+        `Unknown provider "${providerArg}". Run /models to choose from providers with configured API keys.`,
+      ),
+    };
+  }
+
+  return {
+    openModelsCatalogSelector: true,
+    modelsCatalogProvider: providerId,
+  };
+}
+
 const commandHandlers: Record<string, CommandHandler> = {
   help: handleHelp,
   clear: () => {
@@ -267,6 +287,7 @@ const commandHandlers: Record<string, CommandHandler> = {
   },
   info: handleInfoSlashCommand,
   model: () => ({ openModelSelector: true }),
+  models: (args) => handleModels(args),
   compact: () => {
     return { compact: true };
   },
