@@ -7,19 +7,19 @@ import { evaluateFileAccessPolicy } from "../policies/fileAccess";
 export const createNewFileTool: Tool = {
   type: "function",
   displayTitle: "Create New File",
-  wouldLikeTo: "create {{{ filepath }}}",
-  isCurrently: "creating {{{ filepath }}}",
-  hasAlready: "created {{{ filepath }}}",
+  wouldLikeTo: "write chunk {{{ chunkIndex }}} to {{{ filepath }}}",
+  isCurrently: "writing chunk {{{ chunkIndex }}} to {{{ filepath }}}",
+  hasAlready: "wrote chunk {{{ chunkIndex }}} to {{{ filepath }}}",
   group: BUILT_IN_GROUP_NAME,
   readonly: false,
   isInstant: true,
   function: {
     name: BuiltInToolNames.CreateNewFile,
     description:
-      "Create a new file. Only use this when a file doesn't exist and should be created",
+      "Create a new file in chunks. chunkIndex=0 creates the file, later chunk indices append content, and isComplete=true marks the final chunk",
     parameters: {
       type: "object",
-      required: ["filepath", "contents"],
+      required: ["filepath", "contents", "chunkIndex", "isComplete"],
       properties: {
         filepath: {
           type: "string",
@@ -28,17 +28,30 @@ export const createNewFileTool: Tool = {
         },
         contents: {
           type: "string",
-          description: "The contents to write to the new file",
+          description:
+            "The chunk contents to write. Keep chunks small (5-10 KB) to avoid network timeouts during streaming",
+        },
+        chunkIndex: {
+          type: "number",
+          description:
+            "0-based chunk index. chunkIndex=0 creates the file, chunkIndex>0 appends",
+        },
+        isComplete: {
+          type: "boolean",
+          description:
+            "True only on the final chunk. False when more chunks will follow",
         },
       },
     },
   },
   defaultToolPolicy: "allowedWithPermission",
   systemMessageDescription: {
-    prefix: `To create a NEW file, use the ${BuiltInToolNames.CreateNewFile} tool with the relative filepath and new contents. For example, to create a file located at 'path/to/file.txt', you would respond with:`,
+    prefix: `To create a NEW file, use the ${BuiltInToolNames.CreateNewFile} tool with chunked writes. Keep each chunk small (5-10 KB) to avoid network timeouts. Start with chunkIndex=0 and isComplete=false, continue incrementing chunkIndex, and set isComplete=true only on the final chunk. For example, first chunk for 'path/to/file.txt':`,
     exampleArgs: [
       ["filepath", "path/to/the_file.txt"],
-      ["contents", "Contents of the file"],
+      ["contents", "First chunk of file content"],
+      ["chunkIndex", 0],
+      ["isComplete", "false"],
     ],
   },
   preprocessArgs: async (args, { ide }) => {

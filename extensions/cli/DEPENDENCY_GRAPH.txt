@@ -1,0 +1,289 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║         CLI CODEBASE CIRCULAR DEPENDENCY MAP & VISUALIZATION                ║
+║                                                                              ║
+║ Generated for: extensions/cli/src/                                          ║
+║ Focus: telemetry, auth, config, session, ui/hooks                          ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+
+┌─ STATIC IMPORT GRAPH AT MODULE LOAD TIME ──────────────────────────────────┐
+│                                                                             │
+│   ┌──────────────┐         ┌─────────────────┐      ┌──────────────────┐  │
+│   │   env.ts     │◄────────┤  util/logger.ts │◄─────┤ workos-types.ts  │  │
+│   └──────────────┘         └─────────────────┘      └──────────────────┘  │
+│          ▲                           ▲                        ▲             │
+│          │                           │                        │             │
+│          └───────────────────────────┼────────────────────────┘             │
+│                                      │                                      │
+│                           ┌──────────▼──────────┐                           │
+│                           │  auth/workos.ts     │  (CORE UTILITY)           │
+│                           │  ─────────────────  │                           │
+│                           │ exports:            │                           │
+│                           │ • loadAuthConfig()  │                           │
+│                           │ • isAuth...Config() │                           │
+│                           │ • getAccessToken()  │                           │
+│                           │ • getOrgId()        │                           │
+│                           └──────────┬──────────┘                           │
+│                                      │                                      │
+│         ┌────────────────────────────┼────────────────────┐                 │
+│         │                            │                    │                 │
+│         ▼                            ▼                    │                 │
+│  ┌─────────────────┐    ┌────────────────────────┐       │                 │
+│  │  session.ts     │    │ config.ts              │       │                 │
+│  │ ──────────────  │    │ ──────────────────────  │       │                 │
+│  │ imports:        │    │ imports:               │       │                 │
+│  │ • workos (STAT.)│    │ • workos (STAT.) ◄─────┼───┐   │                 │
+│  └─────────────────┘    │ • posthogService (LAZ.)│   │   │                 │
+│                         └────────┬───────────────┘   │   │                 │
+│                                  │                   │   │                 │
+│                  requires() in function             │   │                 │
+│                  (not at module load)               │   │                 │
+│                                  │                   │   │                 │
+│                                  ▼                   │   │                 │
+│                      ┌──────────────────────┐       │   │                 │
+│                      │ posthogService.ts    │◄──────┘   │                 │
+│                      │ ──────────────────── │           │                 │
+│                      │ exports:             │           │                 │
+│                      │ • posthogService     │           │                 │
+│                      │   (instance)         │           │                 │
+│                      │ getEventUserId() {   │           │                 │
+│                      │   require(workos)    │◄──────────┘ (LAZY - inside function)
+│                      │   loadAuthConfig()   │                             │
+│                      │ }                    │                             │
+│                      └──────────────────────┘                             │
+│                                                                             │
+│ ┌─────────────────────────────────────────────────────────────────┐       │
+│ │ OPTIONAL: Lazy import in workos.ts (line 643)                 │       │
+│ │ listUserOrganizations() {                                     │       │
+│ │   const { getApiClient } = await import("../apiClient.js")  │       │
+│ │   // This is ALREADY LAZY so it doesn't create cycle issues   │       │
+│ │ }                                                             │       │
+│ └─────────────────────────────────────────────────────────────────┘       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+┌─ CIRCULAR DEPENDENCY DETECTION ───────────────────────────────────────────┐
+│                                                                            │
+│ CYCLE CHAIN:                                                              │
+│                                                                            │
+│   config.ts                                                               │
+│       │                                                                    │
+│       ├─ (STATIC) auth/workos.ts  ◄────────────────────────────┐          │
+│       │                                                         │          │
+│       └─ (LAZY via require) posthogService.ts                 │          │
+│           │                                                    │          │
+│           └─ (LAZY via require in getEventUserId method)      │          │
+│               auth/workos.ts ───────────────────────────────────┘          │
+│                                                                            │
+│ DETECTION RESULT: ⚠️  CYCLE FOUND (but working via lazy loading)         │
+│                                                                            │
+│ TYPE: Circular import chain                                               │
+│ SEVERITY: 🟠 MEDIUM                                                       │
+│ STATUS: ✅ FUNCTIONAL (lazy loading prevents error at startup)            │
+│ RISK: ⚠️  FRAGILE (breaks if patterns change)                             │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+
+┌─ FILE DEPENDENCY MATRIX ──────────────────────────────────────────────────┐
+│                                                                            │
+│ Source File               │ Direct Imports      │ Lazy Imports           │
+│ ──────────────────────────┼────────────────────┼──────────────────────── │
+│ auth/workos.ts            │ env, logger, types  │ apiClient (import)     │
+│ config.ts                 │ workos, env, ver    │ posthogService (req)   │
+│ session.ts                │ workos, env, logger │ (none)                 │
+│ posthogService.ts         │ logging, logger,    │ workos (require)       │
+│                           │ version             │                        │
+│ telemetry/telemetryService│ logger, version     │ (none)                 │
+│ apiClient.ts              │ env                 │ (none)                 │
+│ onboarding.ts             │ workos, config, env │ (none)                 │
+│ ui/ConfigSelector.tsx     │ workos, config, env │ (none)                 │
+│ ui/hooks/useChat.ts       │ session, services,  │ (none)                 │
+│                           │ telemetryService   │                        │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+
+┌─ CALL CHAIN ANALYSIS ─────────────────────────────────────────────────────┐
+│                                                                            │
+│ HOW THE CYCLE IS TRIGGERED:                                              │
+│                                                                            │
+│ 1. createLlmApi(model, authConfig) is called                             │
+│    ├─ calls mergeUserAgentIntoRequestOptions(model.requestOptions)       │
+│    │  ├─ REQUIRES posthogService (line 31 in config.ts)                 │
+│    │  └─ accesses posthogService.uniqueId property                       │
+│    │                                                                      │
+│    └─ getter accessed: posthogService.uniqueId                           │
+│       ├─ calls private getEventUserId() method                           │
+│       │  ├─ REQUIRES auth/workos (line 119 in posthogService.ts)        │
+│       │  ├─ calls loadAuthConfig()                                       │
+│       │  ├─ calls isAuthenticatedConfig(authConfig)                      │
+│       │  └─ returns authConfig.userId if authenticated                   │
+│       │                                                                  │
+│       └─ caches in _uniqueId property (lazy initialization)              │
+│                                                                            │
+│ 2. When listUserOrganizations() is called later:                          │
+│    ├─ async function in auth/workos.ts (line 628)                       │
+│    ├─ calls await import("../apiClient.js") (line 643)                  │
+│    └─ Gets getApiClient function                                         │
+│                                                                            │
+│ TIMING:                                                                   │
+│ ✅ Step 1: Module load → all static imports complete                     │
+│ ✅ Step 2: createLlmApi() called → lazy requires happen NOW              │
+│ ✅ Step 3: By this point, module graph is complete → no error            │
+│ ✅ Step 4: listUserOrganizations() called → lazy import works            │
+│                                                                            │
+│ ❌ IF someone changes require() to import():                              │
+│    - Both would be at module load time                                    │
+│    - Circular reference at initialization                                 │
+│    - Module loader would fail                                            │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+
+┌─ ALTERNATIVE DEPENDENCY TREES (NO CYCLES) ────────────────────────────────┐
+│                                                                            │
+│ TREE 1: session.ts Dependencies                                           │
+│                                                                            │
+│   session.ts                                                              │
+│       └─ auth/workos.ts  (ONE-WAY) ✅                                     │
+│           └─ util/logger.ts                                              │
+│                                                                            │
+│   No reverse imports → NO CYCLE                                           │
+│                                                                            │
+│ ─────────────────────────────────────────────────────────────────         │
+│                                                                            │
+│ TREE 2: ui/hooks/useChat.ts Dependencies                                  │
+│                                                                            │
+│   ui/hooks/useChat.ts                                                     │
+│       ├─ services/index.ts                                               │
+│       │   ├─ auth/workos.ts                                              │
+│       │   └─ onboarding.ts                                               │
+│       │       └─ config.ts                                               │
+│       │           ├─ auth/workos.ts (already loaded)                     │
+│       │           └─ (lazy) posthogService.ts                            │
+│       ├─ session.ts                                                      │
+│       │   └─ auth/workos.ts (already loaded)                             │
+│       └─ telemetry/telemetryService.ts                                   │
+│                                                                            │
+│   No back-references to useChat.ts → NO CYCLE                            │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+
+┌─ PROPOSED FIXES (PRIORITY ORDER) ─────────────────────────────────────────┐
+│                                                                            │
+│ PRIORITY 1: Extract Type Helpers                                          │
+│ ─────────────────────────────────────────────────────────────────         │
+│ Create: src/util/authTypeHelpers.ts                                       │
+│                                                                            │
+│   isAuthenticatedConfig(config)  ┐                                        │
+│   isEnvironmentAuthConfig(config)├─ Pure functions,                       │
+│   getAccessToken(config)         │  no dependencies                       │
+│   getOrganizationId(config)      │                                        │
+│   getConfigUri(config)           ┘                                        │
+│                                                                            │
+│ Then:                                                                      │
+│   config.ts imports from authTypeHelpers instead of workos.ts            │
+│   Result: REMOVES static import cycle                                    │
+│                                                                            │
+│ Time: ~30 min  │  Risk: LOW  │  Benefit: HIGH                            │
+│                                                                            │
+│ ─────────────────────────────────────────────────────────────────         │
+│                                                                            │
+│ PRIORITY 2: Convert Lazy require() to await import()                      │
+│ ─────────────────────────────────────────────────────────────────         │
+│                                                                            │
+│ config.ts (line 31):                                                       │
+│   OLD: const { posthogService } = require("./telemetry/posthogService")  │
+│   NEW: const { posthogService } = await import(...)                      │
+│                                                                            │
+│ posthogService.ts (line 119):                                              │
+│   OLD: const { loadAuthConfig } = require("../auth/workos")              │
+│   NEW: const { loadAuthConfig } = await import(...)                      │
+│                                                                            │
+│ Time: ~15 min  │  Risk: MEDIUM  │  Benefit: MEDIUM                       │
+│                                                                            │
+│ ─────────────────────────────────────────────────────────────────         │
+│                                                                            │
+│ PRIORITY 3: Extract ID Provider Module                                    │
+│ ─────────────────────────────────────────────────────────────────         │
+│ Create: src/telemetry/userIdProvider.ts                                  │
+│                                                                            │
+│   getTelemetryUserId(): Promise<string>  ┐                               │
+│   - Centralizes ID resolution logic      ├─ Encapsulates cross-module    │
+│   - Handles auth import internally        │  dependency resolution       │
+│   - Returns user ID or machine ID       ┘                               │
+│                                                                            │
+│ Then:                                                                      │
+│   config.ts and posthogService.ts both use getTelemetryUserId()         │
+│   Result: ISOLATES dependency resolution                                 │
+│                                                                            │
+│ Time: ~1 hour  │  Risk: LOW  │  Benefit: MEDIUM                          │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+
+┌─ IMPLEMENTATION GUIDE ────────────────────────────────────────────────────┐
+│                                                                            │
+│ STEP 1: Run baseline tests to ensure everything works                     │
+│ ───────────────────────────────────────────────────                        │
+│ $ npm test                                                                 │
+│                                                                            │
+│ ───────────────────────────────────────────────────────                   │
+│ STEP 2: Create util/authTypeHelpers.ts                                    │
+│ ───────────────────────────────────────────────────────                    │
+│ $ cat > src/util/authTypeHelpers.ts << 'EOF'                             │
+│ import type { AuthConfig, ... } from "../auth/workos-types.js";          │
+│ export function isAuthenticatedConfig(...) { ... }                       │
+│ // Copy all pure functions here                                           │
+│ EOF                                                                        │
+│                                                                            │
+│ ───────────────────────────────────────────────────────                   │
+│ STEP 3: Update config.ts (line 12)                                        │
+│ ───────────────────────────────────────────────────────                    │
+│ OLD: import { getAccessToken, getOrganizationId } from "./auth/workos"   │
+│ NEW: import { getAccessToken, getOrganizationId }                        │
+│      from "./util/authTypeHelpers.js";                                   │
+│                                                                            │
+│ ───────────────────────────────────────────────────────                   │
+│ STEP 4: Verify import paths and run tests                                 │
+│ ───────────────────────────────────────────────────────                    │
+│ $ npm test                                                                 │
+│ $ npm run lint                                                             │
+│ $ npm run build                                                            │
+│                                                                            │
+│ ───────────────────────────────────────────────────────                   │
+│ STEP 5: (Optional) Convert require to import                              │
+│ ───────────────────────────────────────────────────────                    │
+│ In config.ts and posthogService.ts:                                       │
+│ Change require() to await import() inside function bodies                │
+│ Make those functions async if needed                                     │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+
+┌─ VERIFICATION CHECKLIST ──────────────────────────────────────────────────┐
+│                                                                            │
+│ After implementing fixes:                                                 │
+│                                                                            │
+│ □ CLI builds without errors: npm run build                                │
+│ □ All tests pass: npm test                                                │
+│ □ No TypeScript errors: npm run lint                                      │
+│ □ Circular dependency warning gone (if using tool)                        │
+│ □ Application starts successfully in different modes:                     │
+│   □ npm start                                                              │
+│   □ With --serve flag                                                     │
+│   □ With --remote flag                                                    │
+│   □ With --tui flag                                                       │
+│ □ Telemetry still works (check posthog in DevTools)                       │
+│ □ Auth flow still works (login/logout)                                    │
+│ □ Config loading still works                                              │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                             END OF DEPENDENCY MAP
+═══════════════════════════════════════════════════════════════════════════════
