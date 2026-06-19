@@ -1,6 +1,6 @@
 {
   "name": "tezz-code",
-  "version": "0.1.1",
+  "version": "1.0.3",
   "description": "Tezz CLI - AI-powered coding assistant",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
