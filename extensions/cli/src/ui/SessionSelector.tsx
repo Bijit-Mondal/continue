@@ -15,6 +15,13 @@ interface SessionSelectorProps {
   onExit: () => void;
 }
 
+function parseSessionDate(dateStr: string | undefined): Date | null {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return null;
+  return date;
+}
+
 function formatTimestamp(date: Date): string {
   if (isToday(date)) {
     return format(date, "h:mm a");
@@ -158,7 +165,10 @@ export function SessionSelector({
               </Box>
               <Box marginLeft={2}>
                 <Text color="gray">
-                  {formatTimestamp(new Date(session.dateCreated))}
+                  {(() => {
+                    const date = parseSessionDate(session.dateCreated);
+                    return date ? formatTimestamp(date) : "unknown date";
+                  })()}
                   {session.isRemote ? " (remote)" : " (local)"}
                 </Text>
               </Box>

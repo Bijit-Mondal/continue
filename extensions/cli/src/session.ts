@@ -486,10 +486,15 @@ export async function listSessions(
 
     // Combine and sort by date (most recent first)
     const allSessions = [...localSessionsWithPreview, ...remoteSessions]
-      .sort(
-        (a, b) =>
-          new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime(),
-      )
+      .sort((a, b) => {
+        const aTime = a.dateCreated ? new Date(a.dateCreated).getTime() : 0;
+        const bTime = b.dateCreated ? new Date(b.dateCreated).getTime() : 0;
+        // If both invalid, keep original order
+        if (isNaN(aTime) && isNaN(bTime)) return 0;
+        if (isNaN(aTime)) return 1;
+        if (isNaN(bTime)) return -1;
+        return bTime - aTime;
+      })
       .slice(0, limit);
 
     return allSessions;
