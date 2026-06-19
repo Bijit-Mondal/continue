@@ -1,12 +1,11 @@
 import { Box, Text, useInput } from "ink";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { getClipboardText } from "../util/clipboard.js";
 import {
   getProviderApiKeyInput,
   getProviderLabel,
   ONBOARDING_PROVIDERS,
-  type OnboardingProvider,
   validateProviderApiKey,
 } from "../util/providerSetup.js";
 
@@ -14,7 +13,7 @@ import { defaultBoxStyles } from "./styles.js";
 import { TextBuffer } from "./TextBuffer.js";
 
 export interface ProviderSetupResult {
-  providerId: OnboardingProvider;
+  providerId: string;
   apiKey: string;
 }
 
@@ -28,6 +27,22 @@ interface ProviderSetupSelectorProps {
   saveError?: string | null;
 }
 
+const MAX_VISIBLE_OPTIONS = 12;
+
+function filterProviderIds(
+  providerIds: readonly string[],
+  query: string,
+): string[] {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) {
+    return [...providerIds];
+  }
+
+  return providerIds.filter((providerId) =>
+    providerId.toLowerCase().includes(normalizedQuery),
+  );
+}
+
 export const ProviderSetupSelector: React.FC<ProviderSetupSelectorProps> = ({
   onComplete,
   onCancel,
@@ -35,11 +50,21 @@ export const ProviderSetupSelector: React.FC<ProviderSetupSelectorProps> = ({
 }) => {
   const [step, setStep] = useState<"provider" | "api-key">("provider");
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [selectedProviderId, setSelectedProviderId] =
-    useState<OnboardingProvider>("anthropic");
+  const [selectedProviderId, setSelectedProviderId] = useState("anthropic");
+  const [filter, setFilter] = useState("");
   const [textBuffer] = useState(() => new TextBuffer());
   const [maskedLength, setMaskedLength] = useState(0);
   const [error, setError] = useState<string | null>(null);
+
+  const providerOptions = useMemo(
+    () => filterProviderIds(ONBOARDING_PROVIDERS, filter),
+    [filter],
+  );
+
+  const visibleProviderOptions = useMemo(
+    () => providerOptions.slice(0, MAX_VISIBLE_OPTIONS),
+    [providerOptions],
+  );
 
   const syncMaskedLength = useCallback(() => {
     setMaskedLength(textBuffer.text.length);
@@ -89,24 +114,41 @@ export const ProviderSetupSelector: React.FC<ProviderSetupSelectorProps> = ({
     if (step === "provider") {
       if (key.upArrow) {
         setSelectedIndex((current) =>
-          current === 0 ? ONBOARDING_PROVIDERS.length - 1 : current - 1,
+          current === 0 ? Math.max(providerOptions.length - 1, 0) : current - 1,
         );
         return;
       }
 
       if (key.downArrow) {
         setSelectedIndex((current) =>
-          current === ONBOARDING_PROVIDERS.length - 1 ? 0 : current + 1,
+          current === providerOptions.length - 1 ? 0 : current + 1,
         );
         return;
       }
 
       if (key.return) {
-        const providerId = ONBOARDING_PROVIDERS[selectedIndex] ?? "anthropic";
+        const providerId = providerOptions[selectedIndex];
+        if (!providerId) {
+          return;
+        }
         setSelectedProviderId(providerId);
+        setFilter("");
+        setSelectedIndex(0);
         resetApiKeyEntry();
         setStep("api-key");
       }
+
+      if (key.backspace || key.delete) {
+        setFilter((current) => current.slice(0, -1));
+        setSelectedIndex(0);
+        return;
+      }
+
+      if (input && !key.ctrl && !key.meta && input.length === 1) {
+        setFilter((current) => current + input);
+        setSelectedIndex(0);
+      }
+
       return;
     }
 
@@ -141,26 +183,36 @@ export const ProviderSetupSelector: React.FC<ProviderSetupSelectorProps> = ({
           Add Provider
         </Text>
         <Text color="gray" dimColor>
-          Choose a provider to configure
+          Choose a provider from the models.dev catalog
         </Text>
+        <Text color="white">Filter: {filter || "(none)"}</Text>
         <Box flexDirection="column" marginTop={1}>
-          {ONBOARDING_PROVIDERS.map((providerId, index) => {
-            const isSelected = index === selectedIndex;
-            return (
-              <Text
-                key={providerId}
-                color={isSelected ? "blue" : "white"}
-                bold={isSelected}
-              >
-                {isSelected ? "➤ " : "  "}
-                {getProviderLabel(providerId)}
-              </Text>
-            );
-          })}
+          {visibleProviderOptions.length === 0 ? (
+            <Text color="yellow">No providers match this filter.</Text>
+          ) : (
+            visibleProviderOptions.map((providerId, index) => {
+              const isSelected = index === selectedIndex;
+              return (
+                <Text
+                  key={providerId}
+                  color={isSelected ? "blue" : "white"}
+                  bold={isSelected}
+                >
+                  {isSelected ? "➤ " : "  "}
+                  {getProviderLabel(providerId)} ({providerId})
+                </Text>
+              );
+            })
+          )}
         </Box>
+        {providerOptions.length > MAX_VISIBLE_OPTIONS && (
+          <Text color="gray" dimColor>
+            Showing {MAX_VISIBLE_OPTIONS} of {providerOptions.length} matches
+          </Text>
+        )}
         <Box marginTop={1}>
           <Text color="gray" dimColor>
-            ↑/↓ to navigate, Enter to select, Esc to cancel
+            Type to filter, ↑/↓ to navigate, Enter to select, Esc to cancel
           </Text>
         </Box>
       </Box>

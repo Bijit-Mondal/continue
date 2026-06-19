@@ -1,5 +1,7 @@
 import chalk from "chalk";
 
+import { c, theme } from "./constants/theme.js";
+
 // Track if we're in headless mode (default to false)
 let isHeadlessMode = false;
 
@@ -57,18 +59,20 @@ export function warn(message: any, forceLog = false): void {
 }
 
 /**
- * Colored logging helpers that respect headless mode
+ * Colored logging helpers that respect headless mode and use the Tezz theme.
  */
 export const loggers = {
   success: (message: string, forceLog = false) =>
-    log(chalk.green(message), forceLog),
-  info: (message: string, forceLog = false) =>
-    log(chalk.blue(message), forceLog),
+    log(c.primary(message), forceLog),
+  info: (message: string, forceLog = false) => log(c.white(message), forceLog),
   warning: (message: string, forceLog = false) =>
     log(chalk.yellow(message), forceLog),
   error: (message: string, forceLog = true) =>
-    error(chalk.red(message), forceLog),
+    error(c.destructive(message), forceLog),
   debug: (message: string, forceLog = false) =>
-    log(chalk.gray(message), forceLog),
+    log(c.mutedForeground(message), forceLog),
   command: (message: string) => log(message, true), // Always show command outputs
 };
+
+// Re-export the raw theme color for callers that need the hex directly.
+export { theme };

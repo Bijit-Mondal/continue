@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import { vi } from "vitest";
 
+import { theme } from "./constants/theme.js";
 import {
   configureLogger,
   isLoggingEnabled,
@@ -164,13 +165,13 @@ describe("logging utilities", () => {
     it("should provide colored success logger", () => {
       loggers.success("success message");
       expect(consoleInfoSpy).toHaveBeenCalledWith(
-        chalk.green("success message"),
+        chalk.hex(theme.primary)("success message"),
       );
     });
 
     it("should provide colored info logger", () => {
       loggers.info("info message");
-      expect(consoleInfoSpy).toHaveBeenCalledWith(chalk.blue("info message"));
+      expect(consoleInfoSpy).toHaveBeenCalledWith(chalk.white("info message"));
     });
 
     it("should provide colored warning logger", () => {
@@ -182,12 +183,16 @@ describe("logging utilities", () => {
 
     it("should provide colored error logger", () => {
       loggers.error("error message");
-      expect(consoleErrorSpy).toHaveBeenCalledWith(chalk.red("error message"));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        chalk.hex(theme.destructive)("error message"),
+      );
     });
 
     it("should provide colored debug logger", () => {
       loggers.debug("debug message");
-      expect(consoleInfoSpy).toHaveBeenCalledWith(chalk.gray("debug message"));
+      expect(consoleInfoSpy).toHaveBeenCalledWith(
+        chalk.hex(theme.mutedForeground)("debug message"),
+      );
     });
 
     it("should provide command logger that always logs", () => {
@@ -204,7 +209,7 @@ describe("logging utilities", () => {
 
       loggers.success("success message", true);
       expect(consoleInfoSpy).toHaveBeenCalledWith(
-        chalk.green("success message"),
+        chalk.hex(theme.primary)("success message"),
       );
     });
 
@@ -212,7 +217,9 @@ describe("logging utilities", () => {
       configureLogger({ headless: true });
 
       loggers.error("error message");
-      expect(consoleErrorSpy).toHaveBeenCalledWith(chalk.red("error message"));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        chalk.hex(theme.destructive)("error message"),
+      );
 
       loggers.error("error message", false);
       expect(consoleErrorSpy).toHaveBeenCalledTimes(1); // Should not be called again

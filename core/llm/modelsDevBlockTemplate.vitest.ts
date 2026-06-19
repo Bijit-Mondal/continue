@@ -5,6 +5,7 @@ import {
   getDefaultOnboardingModelForProvider,
   getRecommendedModelsForProvider,
   getUsesSlug,
+  modelsDevProviderToContinueProvider,
   toConfigModelId,
   resolveModelFromUsesSlug,
 } from "./modelsDevBlockTemplate.js";
@@ -25,6 +26,24 @@ describe("modelsDevBlockTemplate", () => {
 
     expect(yaml).toContain("provider: gemini");
     expect(yaml).toContain("${{ inputs.GEMINI_API_KEY }}");
+  });
+
+  it("maps models.dev provider IDs to the correct Continue provider names", () => {
+    expect(modelsDevProviderToContinueProvider("xai")).toBe("xAI");
+    expect(modelsDevProviderToContinueProvider("zai")).toBe("zAI");
+    expect(modelsDevProviderToContinueProvider("moonshotai")).toBe("moonshot");
+    expect(modelsDevProviderToContinueProvider("togetherai")).toBe("together");
+    expect(modelsDevProviderToContinueProvider("fireworks-ai")).toBe(
+      "fireworks",
+    );
+    expect(modelsDevProviderToContinueProvider("novita-ai")).toBe("novita");
+    expect(modelsDevProviderToContinueProvider("amazon-bedrock")).toBe(
+      "bedrock",
+    );
+    expect(modelsDevProviderToContinueProvider("deepseek")).toBe("deepseek");
+    expect(modelsDevProviderToContinueProvider("google-vertex-anthropic")).toBe(
+      "vertexai",
+    );
   });
 
   it("returns one recommended model for onboarding", () => {

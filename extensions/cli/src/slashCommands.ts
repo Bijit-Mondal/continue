@@ -2,6 +2,8 @@ import fs from "fs";
 
 import { type AssistantConfig } from "@continuedev/sdk";
 import chalk from "chalk";
+
+import { c } from "./constants/theme.js";
 import type { Session } from "core/index.js";
 import historyManager from "core/util/history.js";
 import { v4 as uuidv4 } from "uuid";
@@ -26,31 +28,31 @@ type CommandHandler = (
 
 async function handleHelp(_args: string[], _assistant: AssistantConfig) {
   const helpMessage = [
-    chalk.bold("Keyboard Shortcuts:"),
+    c.white.bold("Keyboard Shortcuts:"),
     "",
-    chalk.white("Navigation:"),
-    `  ${chalk.cyan("↑/↓")}        Navigate command/file suggestions or history`,
-    `  ${chalk.cyan("Tab")}        Complete command or file selection`,
-    `  ${chalk.cyan("Enter")}      Submit message`,
-    `  ${chalk.cyan("Shift+Enter")} New line`,
-    `  ${chalk.cyan("\\")}          Line continuation (at end of line)`,
-    `  ${chalk.cyan("!")}          Shell mode - run shell commands`,
+    c.white("Navigation:"),
+    `  ${c.accent("↑/↓")}        Navigate command/file suggestions or history`,
+    `  ${c.accent("Tab")}        Complete command or file selection`,
+    `  ${c.accent("Enter")}      Submit message`,
+    `  ${c.accent("Shift+Enter")} New line`,
+    `  ${c.accent("\\")}          Line continuation (at end of line)`,
+    `  ${c.accent("!")}          Shell mode - run shell commands`,
     "",
-    chalk.white("Controls:"),
-    `  ${chalk.cyan("Ctrl+C")}     Clear input`,
-    `  ${chalk.cyan("Ctrl+D")}     Exit application`,
-    `  ${chalk.cyan("Ctrl+L")}     Clear screen`,
-    `  ${chalk.cyan("Shift+Tab")}  Cycle permission modes (normal/plan/auto)`,
-    `  ${chalk.cyan("Esc")}        Cancel streaming or close suggestions`,
+    c.white("Controls:"),
+    `  ${c.accent("Ctrl+C")}     Clear input`,
+    `  ${c.accent("Ctrl+D")}     Exit application`,
+    `  ${c.accent("Ctrl+L")}     Clear screen`,
+    `  ${c.accent("Shift+Tab")}  Cycle permission modes (normal/plan/auto)`,
+    `  ${c.accent("Esc")}        Cancel streaming or close suggestions`,
     "",
-    chalk.white("Special Characters:"),
-    `  ${chalk.cyan("@")}          Search and attach files for context`,
-    `  ${chalk.cyan("/")}          Access slash commands`,
-    `  ${chalk.cyan("!")}          Execute bash commands directly`,
+    c.white("Special Characters:"),
+    `  ${c.accent("@")}          Search and attach files for context`,
+    `  ${c.accent("/")}          Access slash commands`,
+    `  ${c.accent("!")}          Execute bash commands directly`,
     "",
-    chalk.white("Available Commands:"),
-    `  Type ${chalk.cyan("/")} to see available slash commands`,
-    `  Type ${chalk.cyan("!")} followed by a command to execute bash directly`,
+    c.white("Available Commands:"),
+    `  Type ${c.accent("/")} to see available slash commands`,
+    `  Type ${c.accent("!")} followed by a command to execute bash directly`,
   ].join("\n");
   return { output: helpMessage };
 }
@@ -65,18 +67,18 @@ async function handleFork() {
       await clipboardy.default.write(forkCommand);
       return {
         exit: false,
-        output: chalk.gray(`${forkCommand} (copied to clipboard)`),
+        output: c.mutedForeground(`${forkCommand} (copied to clipboard)`),
       };
     } catch {
       return {
         exit: false,
-        output: chalk.gray(`${forkCommand}`),
+        output: c.mutedForeground(`${forkCommand}`),
       };
     }
   } catch (error: any) {
     return {
       exit: false,
-      output: chalk.red(`Failed to create fork command: ${error.message}`),
+      output: c.destructive(`Failed to create fork command: ${error.message}`),
     };
   }
 }
@@ -86,9 +88,7 @@ function handleTitle(args: string[]) {
   if (!title) {
     return {
       exit: false,
-      output: chalk.yellow(
-        "Please provide a title. Usage: /title <your title>",
-      ),
+      output: c.primary("Please provide a title. Usage: /title <your title>"),
     };
   }
 
@@ -96,12 +96,12 @@ function handleTitle(args: string[]) {
     updateSessionTitle(title);
     return {
       exit: false,
-      output: chalk.green(`Session title updated to: "${title}"`),
+      output: c.primary(`Session title updated to: "${title}"`),
     };
   } catch (error: any) {
     return {
       exit: false,
-      output: chalk.red(`Failed to update title: ${error.message}`),
+      output: c.destructive(`Failed to update title: ${error.message}`),
     };
   }
 }
@@ -116,16 +116,16 @@ async function handleSkills(): Promise<SlashCommandResult> {
   if (!skills.length) {
     return {
       exit: false,
-      output: chalk.yellow(
+      output: c.primary(
         "No skills found. Add skills under .tezz/skills or .claude/skills.",
       ),
     };
   }
 
-  const header = chalk.bold("Available skills:");
+  const header = c.white.bold("Available skills:");
   const lines = skills.map(
     (skill) =>
-      `${chalk.cyan(skill.name)} - ${skill.description} ${chalk.gray(
+      `${c.accent(skill.name)} - ${skill.description} ${c.mutedForeground(
         `(${skill.path})`,
       )}`,
   );
@@ -142,7 +142,7 @@ async function handleImportSkill(args: string[]): Promise<SlashCommandResult> {
   if (!query) {
     return {
       exit: false,
-      output: chalk.yellow(
+      output: c.primary(
         "Please provide a skill URL or name. Usage: /import-skill <url-or-name>",
       ),
     };
@@ -193,7 +193,7 @@ function handleImport(args: string[]): SlashCommandResult {
   if (!filePath) {
     return {
       exit: false,
-      output: chalk.yellow(
+      output: c.primary(
         "Please provide a file path. Usage: /import <file-path>",
       ),
     };
@@ -202,7 +202,7 @@ function handleImport(args: string[]): SlashCommandResult {
   if (!fs.existsSync(filePath)) {
     return {
       exit: false,
-      output: chalk.red(`File not found: ${filePath}`),
+      output: c.destructive(`File not found: ${filePath}`),
     };
   }
 
@@ -213,7 +213,7 @@ function handleImport(args: string[]): SlashCommandResult {
     if (!isValidExportedSession(exportedData)) {
       return {
         exit: false,
-        output: chalk.red(
+        output: c.destructive(
           "Invalid session file: expected a valid Tezz exported session (version 1).",
         ),
       };
@@ -233,9 +233,9 @@ function handleImport(args: string[]): SlashCommandResult {
       historyManager.save(session);
       return {
         exit: false,
-        output: chalk.green(
+        output: c.primary(
           `Session imported with new ID: ${session.sessionId}\n` +
-            chalk.gray(`(original ID: ${originalId} already existed)`),
+            c.mutedForeground(`(original ID: ${originalId} already existed)`),
         ),
       };
     }
@@ -243,14 +243,14 @@ function handleImport(args: string[]): SlashCommandResult {
     historyManager.save(session);
     return {
       exit: false,
-      output: chalk.green(
+      output: c.primary(
         `Session imported: ${session.sessionId} (${session.title})`,
       ),
     };
   } catch (error: any) {
     return {
       exit: false,
-      output: chalk.red(`Failed to import session: ${error.message}`),
+      output: c.destructive(`Failed to import session: ${error.message}`),
     };
   }
 }
@@ -262,7 +262,7 @@ function handleModels(args: string[]) {
   if (providerArg && !providerId) {
     return {
       exit: false,
-      output: chalk.yellow(
+      output: c.primary(
         `Unknown provider "${providerArg}". Run /models to choose from providers with configured API keys.`,
       ),
     };

@@ -1,12 +1,28 @@
 import fs from "fs/promises";
 import path from "path";
 import process from "process";
+import { fileURLToPath } from "url";
+
+const REPO_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
 
 const MODELS_DEV_API_URL = "https://models.dev/api.json";
-const FULL_OUTPUT_PATH = path.resolve("core/llm/modelsDevCatalog.json");
-const INDEX_OUTPUT_PATH = path.resolve("core/llm/modelsDevModelIndex.json");
-const DIST_FULL_OUTPUT_PATH = path.resolve("core/dist/llm/modelsDevCatalog.json");
+const FULL_OUTPUT_PATH = path.resolve(
+  REPO_ROOT,
+  "core/llm/modelsDevCatalog.json",
+);
+const INDEX_OUTPUT_PATH = path.resolve(
+  REPO_ROOT,
+  "core/llm/modelsDevModelIndex.json",
+);
+const DIST_FULL_OUTPUT_PATH = path.resolve(
+  REPO_ROOT,
+  "core/dist/llm/modelsDevCatalog.json",
+);
 const DIST_INDEX_OUTPUT_PATH = path.resolve(
+  REPO_ROOT,
   "core/dist/llm/modelsDevModelIndex.json",
 );
 
@@ -30,16 +46,36 @@ function toProviderEntry(provider) {
   };
 }
 
-async function main() {
+async function fileExists(filePath) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function copyToDist() {
+  await fs.mkdir(path.dirname(DIST_FULL_OUTPUT_PATH), { recursive: true });
+  if (await fileExists(FULL_OUTPUT_PATH)) {
+    await fs.copyFile(FULL_OUTPUT_PATH, DIST_FULL_OUTPUT_PATH);
+  }
+  if (await fileExists(INDEX_OUTPUT_PATH)) {
+    await fs.copyFile(INDEX_OUTPUT_PATH, DIST_INDEX_OUTPUT_PATH);
+  }
+}
+
+async function fetchCatalog() {
   const response = await fetch(MODELS_DEV_API_URL);
   if (!response.ok) {
     throw new Error(
       `Failed to download models.dev catalog: ${response.status} ${response.statusText}`,
     );
   }
+  return response.json();
+}
 
-  const rawCatalog = await response.json();
-
+async function writeCatalog(rawCatalog) {
   const providers = Object.fromEntries(
     Object.entries(rawCatalog)
       .map(([providerId, provider]) => [providerId, toProviderEntry(provider)])
@@ -57,8 +93,6 @@ async function main() {
     `${JSON.stringify(output, null, 2)}\n`,
     "utf8",
   );
-  await fs.mkdir(path.dirname(DIST_FULL_OUTPUT_PATH), { recursive: true });
-  await fs.copyFile(FULL_OUTPUT_PATH, DIST_FULL_OUTPUT_PATH);
 
   const uniqueModelMap = new Map();
   for (const provider of Object.values(providers)) {
@@ -108,7 +142,6 @@ async function main() {
     `${JSON.stringify(modelIndex, null, 2)}\n`,
     "utf8",
   );
-  await fs.copyFile(INDEX_OUTPUT_PATH, DIST_INDEX_OUTPUT_PATH);
 
   const providerCount = Object.keys(providers).length;
   const modelCount = Object.values(providers).reduce(
@@ -120,6 +153,39 @@ async function main() {
   console.log(
     `Updated ${INDEX_OUTPUT_PATH} (${providerCount} providers, ${modelCount} model entries, ${modelIndex.models.length} unique model IDs)`,
   );
+}
+
+async function main() {
+  const canFetch = process.env.SKIP_CATALOG_FETCH !== "1";
+  let fetched = false;
+
+  if (canFetch) {
+    try {
+      const rawCatalog = await fetchCatalog();
+      await writeCatalog(rawCatalog);
+      fetched = true;
+    } catch (error) {
+      const hasExisting =
+        (await fileExists(FULL_OUTPUT_PATH)) &&
+        (await fileExists(INDEX_OUTPUT_PATH));
+      if (hasExisting) {
+        console.warn(
+          `Warning: could not refresh models.dev catalog (${error.message}). Using existing bundled catalog.`,
+        );
+      } else {
+        throw new Error(
+          `Failed to download models.dev catalog and no existing catalog found: ${error.message}`,
+        );
+      }
+    }
+  }
+
+  await copyToDist();
+
+  if (!fetched && canFetch) {
+    // Already logged warning above; just confirm dist is in place.
+    console.log(`Using existing catalog at ${FULL_OUTPUT_PATH}`);
+  }
 }
 
 main().catch((error) => {

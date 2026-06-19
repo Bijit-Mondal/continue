@@ -18,6 +18,80 @@ const CONTINUE_PROVIDER_MAP: Record<string, string> = {
   google: "gemini",
 };
 
+// Maps models.dev provider IDs to the exact provider names expected by the
+// openai-adapters package. Composite or differently-spelled IDs are mapped
+// explicitly; everything else is resolved case-insensitively against the
+// adapter list below.
+const MODELSDEV_TO_CONTINUE_PROVIDER: Record<string, string> = {
+  "amazon-bedrock": "bedrock",
+  "fireworks-ai": "fireworks",
+  "google-vertex": "vertexai",
+  "google-vertex-anthropic": "vertexai",
+  "novita-ai": "novita",
+  moonshotai: "moonshot",
+  togetherai: "together",
+  xai: "xAI",
+  zai: "zAI",
+};
+
+const OPENAI_ADAPTER_PROVIDERS: readonly string[] = [
+  "ai-sdk",
+  "anthropic",
+  "askSage",
+  "azure",
+  "bedrock",
+  "cerebras",
+  "clawrouter",
+  "cohere",
+  "cometapi",
+  "deepinfra",
+  "deepseek",
+  "fireworks",
+  "function-network",
+  "gemini",
+  "groq",
+  "huggingface-inference-api",
+  "inception",
+  "jina",
+  "kindo",
+  "llama.cpp",
+  "llamafile",
+  "llamastack",
+  "lmstudio",
+  "minimax",
+  "mistral",
+  "mock",
+  "moonshot",
+  "msty",
+  "ncompass",
+  "nebius",
+  "novita",
+  "nvidia",
+  "ollama",
+  "openai",
+  "openrouter",
+  "ovhcloud",
+  "relace",
+  "sambanova",
+  "scaleway",
+  "tensorix",
+  "text-gen-webui",
+  "together",
+  "vertexai",
+  "vllm",
+  "voyage",
+  "watsonx",
+  "xAI",
+  "zAI",
+];
+
+const OPENAI_ADAPTER_PROVIDER_BY_LOWER = new Map(
+  OPENAI_ADAPTER_PROVIDERS.map((provider) => [
+    provider.toLowerCase(),
+    provider,
+  ]),
+);
+
 const LIGHTWEIGHT_MODEL_PATTERN =
   /(?:^|[.-])(nano|mini|flash|haiku|lite|small)(?:[.-]|$)/i;
 
@@ -94,9 +168,17 @@ function rankModelsForOnboarding(
 export function modelsDevProviderToContinueProvider(
   providerId: string,
 ): string {
-  return (
-    CONTINUE_PROVIDER_MAP[providerId.toLowerCase()] ?? providerId.toLowerCase()
-  );
+  const lower = providerId.toLowerCase();
+
+  if (CONTINUE_PROVIDER_MAP[lower]) {
+    return CONTINUE_PROVIDER_MAP[lower];
+  }
+
+  if (MODELSDEV_TO_CONTINUE_PROVIDER[lower]) {
+    return MODELSDEV_TO_CONTINUE_PROVIDER[lower];
+  }
+
+  return OPENAI_ADAPTER_PROVIDER_BY_LOWER.get(lower) ?? lower;
 }
 
 export function continueProviderToModelsDevProvider(

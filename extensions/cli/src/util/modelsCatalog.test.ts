@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   filterCatalogModels,
+  getConfiguredProvidersFromYaml,
+  getProvidersWithApiKeys,
   listCatalogModelsForProvider,
   resolveApiKeyForProvider,
   resolveProviderArg,
@@ -13,6 +15,8 @@ describe("modelsCatalog", () => {
     expect(resolveProviderArg("anthropic")).toBe("anthropic");
     expect(resolveProviderArg("anth")).toBe("anthropic");
     expect(resolveProviderArg("openrouter")).toBe("openrouter");
+    expect(resolveProviderArg("xai")).toBe("xai");
+    expect(resolveProviderArg("groq")).toBe("groq");
   });
 
   it("lists models for OpenRouter", () => {
@@ -24,6 +28,11 @@ describe("modelsCatalog", () => {
   it("lists models for a provider", () => {
     const models = listCatalogModelsForProvider("anthropic");
     expect(models.some((model) => model.id.includes("claude"))).toBe(true);
+  });
+
+  it("lists models for providers added via /config", () => {
+    const models = listCatalogModelsForProvider("xai");
+    expect(models.length).toBeGreaterThan(0);
   });
 
   it("filters catalog models by query", () => {
@@ -49,6 +58,57 @@ describe("modelsCatalog", () => {
     } finally {
       if (previous !== undefined) {
         process.env.ANTHROPIC_API_KEY = previous;
+      }
+    }
+  });
+
+  it("detects multiple configured providers from yaml", () => {
+    const yaml = `models:
+  - uses: anthropic/claude-sonnet-4-6
+    with:
+      ANTHROPIC_API_KEY: sk-ant-test123456789
+  - uses: xai/grok-3
+    with:
+      XAI_API_KEY: xai-test-key
+  - uses: groq/llama-3.3-70b-versatile
+    with:
+      GROQ_API_KEY: groq-test-key
+`;
+
+    expect(getConfiguredProvidersFromYaml(yaml)).toEqual([
+      { providerId: "anthropic", apiKey: "sk-ant-test123456789" },
+      { providerId: "groq", apiKey: "groq-test-key" },
+      { providerId: "xai", apiKey: "xai-test-key" },
+    ]);
+  });
+
+  it("detects OpenRouter from any model entry with its API key", () => {
+    const yaml = `models:
+  - uses: anthropic/claude-sonnet-4
+    with:
+      OPENROUTER_API_KEY: sk-or-test-key
+`;
+
+    expect(getConfiguredProvidersFromYaml(yaml)).toEqual([
+      { providerId: "openrouter", apiKey: "sk-or-test-key" },
+    ]);
+  });
+
+  it("prefers environment API keys when building provider list", () => {
+    const previous = process.env.DEEPSEEK_API_KEY;
+    process.env.DEEPSEEK_API_KEY = "deepseek-env-key";
+
+    try {
+      const providers = getProvidersWithApiKeys("/tmp/does-not-exist.yaml");
+      const deepseek = providers.find(
+        (provider) => provider.providerId === "deepseek",
+      );
+      expect(deepseek?.apiKey).toBe("deepseek-env-key");
+    } finally {
+      if (previous === undefined) {
+        delete process.env.DEEPSEEK_API_KEY;
+      } else {
+        process.env.DEEPSEEK_API_KEY = previous;
       }
     }
   });
@@ -112,5 +172,18 @@ describe("addModelUsesToYaml", () => {
     expect(yaml).toContain("uses: z-ai/glm-5.2");
     expect(yaml).not.toContain("uses: openrouter/");
     expect(yaml).toContain("OPENROUTER_API_KEY: sk-or-test-key");
+  });
+
+  it("adds models for non-default providers", () => {
+    const { yaml, added } = addModelUsesToYaml(
+      "",
+      "xai",
+      "grok-3",
+      "xai-test-key",
+    );
+
+    expect(added).toBe(true);
+    expect(yaml).toContain("uses: xai/");
+    expect(yaml).toContain("XAI_API_KEY: xai-test-key");
   });
 });

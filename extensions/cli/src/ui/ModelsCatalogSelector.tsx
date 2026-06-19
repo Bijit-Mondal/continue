@@ -1,6 +1,7 @@
 import { Box, Text, useInput } from "ink";
 import React, { useMemo, useState } from "react";
 
+import { getProviderLabel } from "../util/providerSetup.js";
 import {
   filterCatalogModels,
   formatModelCatalogLabel,
@@ -25,7 +26,7 @@ interface ModelsCatalogSelectorProps {
 const MAX_VISIBLE_OPTIONS = 12;
 
 function formatProviderLabel(provider: ProviderWithApiKey): string {
-  return provider.providerId;
+  return `${getProviderLabel(provider.providerId)} (${provider.providerId})`;
 }
 
 export const ModelsCatalogSelector: React.FC<ModelsCatalogSelectorProps> = ({

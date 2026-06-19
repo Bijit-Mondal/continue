@@ -1,7 +1,6 @@
 import { execSync } from "child_process";
 
-import chalk from "chalk";
-
+import { c } from "./constants/theme.js";
 import { services } from "./services/index.js";
 import {
   getCurrentSession,
@@ -16,98 +15,98 @@ function getVersionInfo(): string[] {
   const cwd = process.cwd();
 
   return [
-    chalk.white("CLI Information:"),
-    `  Version: ${chalk.green(version)}`,
-    `  Working Directory: ${chalk.blue(cwd)}`,
+    c.white("CLI Information:"),
+    `  Version: ${c.primary(version)}`,
+    `  Working Directory: ${c.primary(cwd)}`,
   ];
 }
 
 function getConfigInfo(): string[] {
-  const lines: string[] = ["", chalk.white("Configuration:")];
+  const lines: string[] = ["", c.white("Configuration:")];
 
   try {
     const configState = services.config.getState();
     if (configState.config) {
-      lines.push(`  ${chalk.gray(`Using ${configState.config?.name}`)}`);
+      lines.push(`  ${c.mutedForeground(`Using ${configState.config?.name}`)}`);
     } else {
-      lines.push(`  ${chalk.red(`Config not found`)}`);
+      lines.push(`  ${c.destructive(`Config not found`)}`);
     }
     if (configState.configPath) {
-      lines.push(`  Path: ${chalk.blue(configState.configPath)}`);
+      lines.push(`  Path: ${c.primary(configState.configPath)}`);
     }
 
     // Add current model info
     try {
       const modelInfo = services.model?.getModelInfo();
       if (modelInfo) {
-        lines.push(`  Model: ${chalk.cyan(modelInfo.name)}`);
+        lines.push(`  Model: ${c.accent(modelInfo.name)}`);
       } else {
-        lines.push(`  Model: ${chalk.red("Not available")}`);
+        lines.push(`  Model: ${c.destructive("Not available")}`);
       }
     } catch {
-      lines.push(`  Model: ${chalk.red("Error retrieving model info")}`);
+      lines.push(`  Model: ${c.destructive("Error retrieving model info")}`);
     }
   } catch {
-    lines.push(`  ${chalk.red("Configuration service not available")}`);
+    lines.push(`  ${c.destructive("Configuration service not available")}`);
   }
 
   return lines;
 }
 
 function getSessionInfo(): string[] {
-  const lines: string[] = ["", chalk.white("Session:")];
+  const lines: string[] = ["", c.white("Session:")];
 
   try {
     const currentSession = getCurrentSession();
     const sessionFilePath = getSessionFilePath();
     lines.push(
-      `  Title: ${chalk.green(currentSession.title)}`,
-      `  ID: ${chalk.gray(currentSession.sessionId)}`,
-      `  File: ${chalk.blue(sessionFilePath)}`,
+      `  Title: ${c.primary(currentSession.title)}`,
+      `  ID: ${c.mutedForeground(currentSession.sessionId)}`,
+      `  File: ${c.primary(sessionFilePath)}`,
     );
   } catch {
-    lines.push(`  ${chalk.red("Session not available")}`);
+    lines.push(`  ${c.destructive("Session not available")}`);
   }
 
   return lines;
 }
 
 function getUsageInfo(): string[] {
-  const lines: string[] = ["", chalk.white("Usage:")];
+  const lines: string[] = ["", c.white("Usage:")];
 
   try {
     const usage = getSessionUsage();
     if (usage.totalCost > 0) {
       lines.push(
-        `  Total Cost: ${chalk.green(`$${usage.totalCost.toFixed(6)}`)}`,
+        `  Total Cost: ${c.primary(`$${usage.totalCost.toFixed(6)}`)}`,
       );
       lines.push(
-        `  Input Tokens: ${chalk.cyan(usage.promptTokens.toLocaleString())}`,
+        `  Input Tokens: ${c.accent(usage.promptTokens.toLocaleString())}`,
       );
       lines.push(
-        `  Output Tokens: ${chalk.cyan(usage.completionTokens.toLocaleString())}`,
+        `  Output Tokens: ${c.accent(usage.completionTokens.toLocaleString())}`,
       );
 
       if (usage.promptTokensDetails?.cachedTokens) {
         lines.push(
-          `  Cache Read Tokens: ${chalk.cyan(usage.promptTokensDetails.cachedTokens.toLocaleString())}`,
+          `  Cache Read Tokens: ${c.accent(usage.promptTokensDetails.cachedTokens.toLocaleString())}`,
         );
       }
 
       if (usage.promptTokensDetails?.cacheWriteTokens) {
         lines.push(
-          `  Cache Write Tokens: ${chalk.cyan(usage.promptTokensDetails.cacheWriteTokens.toLocaleString())}`,
+          `  Cache Write Tokens: ${c.accent(usage.promptTokensDetails.cacheWriteTokens.toLocaleString())}`,
         );
       }
 
       const totalTokens = usage.promptTokens + usage.completionTokens;
-      lines.push(`  Total Tokens: ${chalk.cyan(totalTokens.toLocaleString())}`);
+      lines.push(`  Total Tokens: ${c.accent(totalTokens.toLocaleString())}`);
     } else {
-      lines.push(`  ${chalk.gray("No usage data yet")}`);
+      lines.push(`  ${c.mutedForeground("No usage data yet")}`);
     }
   } catch (error) {
     logger.warn("Failed to get session usage:", error);
-    lines.push(`  ${chalk.red("Usage data not available")}`);
+    lines.push(`  ${c.destructive("Usage data not available")}`);
   }
 
   return lines;
@@ -131,10 +130,10 @@ function getDiagnosticInfo(): string[] {
 
   return [
     "",
-    chalk.white("Diagnostic Info"),
-    `  Currently running: npm-global (${chalk.green(npmVersion)})`,
-    `  Path: ${chalk.blue(nodePath)}`,
-    `  Invoked: ${chalk.blue(invokedPath)}`,
+    c.white("Diagnostic Info"),
+    `  Currently running: npm-global (${c.primary(npmVersion)})`,
+    `  Path: ${c.primary(nodePath)}`,
+    `  Invoked: ${c.primary(invokedPath)}`,
   ];
 }
 

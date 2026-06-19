@@ -7,26 +7,21 @@ import {
   toConfigModelId,
 } from "core/llm/modelsDevBlockTemplate.js";
 import {
+  getAllProviderIds,
   getModelsForProvider,
   type ModelsDevCatalogModelWithProvider,
 } from "core/llm/modelsDevCatalog.js";
-import modelsDevCatalogJson from "core/llm/modelsDevCatalog.json" with { type: "json" };
 import { parse } from "yaml";
 
 import { env } from "../env.js";
+import {
+  modelBelongsToProvider,
+  type ModelUsesConfig,
+} from "./yamlConfigUpdater.js";
 
 export interface ProviderWithApiKey {
   providerId: string;
   apiKey: string;
-}
-
-function getAllProviderIds(): string[] {
-  const providers = (
-    modelsDevCatalogJson as { providers: Record<string, unknown> }
-  ).providers;
-  return Object.keys(providers).sort((left, right) =>
-    left.localeCompare(right),
-  );
 }
 
 function readConfigYamlContent(configPath: string): string {
@@ -36,62 +31,88 @@ function readConfigYamlContent(configPath: string): string {
   return fs.readFileSync(configPath, "utf8");
 }
 
+function resolveApiKeyFromEnv(providerId: string): string | undefined {
+  const apiKeyInput = getApiKeyInputForProvider(providerId);
+  const envValue = process.env[apiKeyInput]?.trim();
+  if (envValue) {
+    return envValue;
+  }
+
+  if (providerId === "google") {
+    return process.env.GOOGLE_API_KEY?.trim();
+  }
+
+  return undefined;
+}
+
+export function getConfiguredProvidersFromYaml(
+  yamlContent: string,
+): ProviderWithApiKey[] {
+  if (!yamlContent.trim()) {
+    return [];
+  }
+
+  const providers = new Map<string, string>();
+
+  try {
+    const config = parse(yamlContent) as { models?: ModelUsesConfig[] };
+
+    for (const model of config.models ?? []) {
+      for (const providerId of getAllProviderIds()) {
+        if (!modelBelongsToProvider(model, providerId)) {
+          continue;
+        }
+
+        const apiKey =
+          model.with?.[getApiKeyInputForProvider(providerId)]?.trim();
+        if (apiKey) {
+          providers.set(providerId, apiKey);
+        }
+      }
+    }
+  } catch {
+    return [];
+  }
+
+  return [...providers.entries()]
+    .map(([providerId, apiKey]) => ({ providerId, apiKey }))
+    .sort((left, right) => left.providerId.localeCompare(right.providerId));
+}
+
 export function resolveApiKeyForProvider(
   providerId: string,
   yamlContent: string,
 ): string | undefined {
-  const apiKeyInput = getApiKeyInputForProvider(providerId);
-  const envValue = process.env[apiKeyInput];
-  if (envValue?.trim()) {
-    return envValue.trim();
+  const fromEnv = resolveApiKeyFromEnv(providerId);
+  if (fromEnv) {
+    return fromEnv;
   }
 
-  if (!yamlContent.trim()) {
-    return undefined;
-  }
-
-  try {
-    const config = parse(yamlContent) as {
-      models?: Array<{ uses?: string; with?: Record<string, string> }>;
-    };
-
-    for (const model of config.models ?? []) {
-      const apiKey = model.with?.[apiKeyInput]?.trim();
-      if (!apiKey) {
-        continue;
-      }
-
-      if (providerId === "openrouter") {
-        return apiKey;
-      }
-
-      if (model?.uses?.startsWith(`${providerId}/`)) {
-        return apiKey;
-      }
-    }
-  } catch {
-    return undefined;
-  }
-
-  return undefined;
+  return getConfiguredProvidersFromYaml(yamlContent).find(
+    (provider) => provider.providerId === providerId,
+  )?.apiKey;
 }
 
 export function getProvidersWithApiKeys(
   configPath: string = path.join(env.continueHome, "config.yaml"),
 ): ProviderWithApiKey[] {
   const yamlContent = readConfigYamlContent(configPath);
+  const providers = new Map<string, string>();
 
-  return getAllProviderIds()
-    .map((providerId) => {
-      const apiKey = resolveApiKeyForProvider(providerId, yamlContent);
-      if (!apiKey) {
-        return undefined;
-      }
-      return { providerId, apiKey };
-    })
-    .filter(
-      (provider): provider is ProviderWithApiKey => provider !== undefined,
-    );
+  for (const provider of getConfiguredProvidersFromYaml(yamlContent)) {
+    providers.set(provider.providerId, provider.apiKey);
+  }
+
+  for (const providerId of getAllProviderIds()) {
+    const apiKey = resolveApiKeyFromEnv(providerId);
+    if (apiKey) {
+      providers.set(providerId, apiKey);
+    }
+  }
+
+  return [...providers.entries()]
+    .map(([providerId, apiKey]) => ({ providerId, apiKey }))
+    .sort((left, right) => left.providerId.localeCompare(right.providerId));
 }
 
 export function listCatalogModelsForProvider(

@@ -5,6 +5,10 @@ import {
   getUsesSlug,
   toConfigModelId,
 } from "core/llm/modelsDevBlockTemplate.js";
+import {
+  getAllProviderIds,
+  getModelsForProvider,
+} from "core/llm/modelsDevCatalog.js";
 import { parseDocument } from "yaml";
 
 export interface ModelUsesConfig {
@@ -39,7 +43,7 @@ function createModelUsesConfig(
   };
 }
 
-function modelBelongsToProvider(
+export function modelBelongsToProvider(
   model: ModelUsesConfig,
   providerId: string,
 ): boolean {
@@ -52,7 +56,12 @@ function modelBelongsToProvider(
     return true;
   }
 
-  return model.uses?.startsWith(`${providerId}/`) ?? false;
+  if (model.uses?.startsWith(`${providerId}/`)) {
+    return true;
+  }
+
+  const ownerSlug = model.uses?.split("/")[0];
+  return ownerSlug === providerId;
 }
 
 function upsertProviderModels(
@@ -79,7 +88,9 @@ function upsertProviderModels(
   });
 
   if (!hasProviderModel) {
-    const defaultModel = getDefaultOnboardingModelForProvider(providerId);
+    const defaultModel =
+      getDefaultOnboardingModelForProvider(providerId) ??
+      getModelsForProvider(providerId)[0];
     if (defaultModel) {
       updatedModels.push(
         createModelUsesConfig(providerId, defaultModel.id, apiKey),
@@ -109,7 +120,9 @@ export function updateProviderModelsInYaml(
     const doc = parseDocument(yamlContent);
 
     if (!doc.contents || doc.contents === null) {
-      const defaultModel = getDefaultOnboardingModelForProvider(providerId);
+      const defaultModel =
+        getDefaultOnboardingModelForProvider(providerId) ??
+        getModelsForProvider(providerId)[0];
       return writeConfig({
         ...DEFAULT_CONFIG,
         models: defaultModel
@@ -127,7 +140,9 @@ export function updateProviderModelsInYaml(
     doc.set("models", config.models);
     return doc.toString();
   } catch {
-    const defaultModel = getDefaultOnboardingModelForProvider(providerId);
+    const defaultModel =
+      getDefaultOnboardingModelForProvider(providerId) ??
+      getModelsForProvider(providerId)[0];
     return writeConfig({
       ...DEFAULT_CONFIG,
       models: defaultModel
@@ -153,34 +168,17 @@ export function updateAnthropicModelInYaml(
 export function updateConfigFromEnvApiKeys(yamlContent: string): string {
   let updated = yamlContent;
 
-  const providers: Array<{ providerId: string; apiKey: string }> = [];
-  if (process.env.ANTHROPIC_API_KEY) {
-    providers.push({
-      providerId: "anthropic",
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
-  }
-  if (process.env.OPENAI_API_KEY) {
-    providers.push({
-      providerId: "openai",
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-  }
-  if (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY) {
-    providers.push({
-      providerId: "google",
-      apiKey: process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY!,
-    });
-  }
-  if (process.env.OPENROUTER_API_KEY) {
-    providers.push({
-      providerId: "openrouter",
-      apiKey: process.env.OPENROUTER_API_KEY,
-    });
-  }
+  for (const providerId of getAllProviderIds()) {
+    const apiKeyInput = getApiKeyInputForProvider(providerId);
+    const apiKey =
+      process.env[apiKeyInput]?.trim() ??
+      (providerId === "google"
+        ? process.env.GOOGLE_API_KEY?.trim()
+        : undefined);
 
-  for (const { providerId, apiKey } of providers) {
-    updated = updateProviderModelsInYaml(updated, providerId, apiKey);
+    if (apiKey) {
+      updated = updateProviderModelsInYaml(updated, providerId, apiKey);
+    }
   }
 
   return updated;

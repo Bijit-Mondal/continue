@@ -1,10 +1,10 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import chalk from "chalk";
 import { continueProviderToModelsDevProvider } from "core/llm/modelsDevBlockTemplate.js";
 import { setConfigFilePermissions } from "core/util/paths.js";
 
+import { c } from "./constants/theme.js";
 import { getApiClient } from "./config.js";
 import { loadConfiguration } from "./configLoader.js";
 import { env } from "./env.js";
@@ -12,10 +12,10 @@ import { question } from "./util/prompt.js";
 import {
   isOnboardingProvider,
   type OnboardingProvider,
+  POPULAR_PROVIDERS,
   validateProviderApiKey,
   getProviderApiKeyInput,
   getProviderLabel,
-  ONBOARDING_PROVIDERS,
 } from "./util/providerSetup.js";
 import {
   getDefaultProviderFromEnv,
@@ -42,7 +42,7 @@ export async function checkHasAcceptableModel(
 
 export async function createOrUpdateConfig(
   apiKey: string,
-  providerId: OnboardingProvider = "anthropic",
+  providerId: string = "anthropic",
 ): Promise<void> {
   const configDir = path.dirname(CONFIG_PATH);
 
@@ -64,15 +64,30 @@ export async function createOrUpdateConfig(
 }
 
 async function promptForProvider(): Promise<OnboardingProvider> {
-  console.log(chalk.yellow("Choose a provider to configure:"));
-  ONBOARDING_PROVIDERS.forEach((provider, index) => {
-    console.log(chalk.white(`  ${index + 1}. ${getProviderLabel(provider)}`));
+  console.log(c.primary("Popular providers:"));
+  POPULAR_PROVIDERS.forEach((provider, index) => {
+    console.log(
+      c.white(`  ${index + 1}. ${getProviderLabel(provider)} (${provider})`),
+    );
   });
+  console.log(
+    c.mutedForeground(
+      "\nYou can also enter any models.dev provider ID (e.g. xai).",
+    ),
+  );
 
-  const answer = await question(chalk.white("\nEnter provider number [1]: "));
-  const selectedIndex = Number.parseInt(answer || "1", 10) - 1;
-  const provider = ONBOARDING_PROVIDERS[selectedIndex] ?? "anthropic";
-  return provider;
+  while (true) {
+    const answer = await question(c.white("\nProvider ID [anthropic]: "));
+    const provider = answer.trim() || "anthropic";
+
+    if (isOnboardingProvider(provider)) {
+      return provider;
+    }
+
+    console.log(
+      c.destructive(`"${provider}" is not a known models.dev provider ID.`),
+    );
+  }
 }
 
 export async function runOnboardingFlow(
@@ -84,7 +99,7 @@ export async function runOnboardingFlow(
 
   if (process.env.CONTINUE_USE_BEDROCK === "1") {
     console.log(
-      chalk.blue("✓ Using AWS Bedrock (CONTINUE_USE_BEDROCK detected)"),
+      c.primary("✓ Using AWS Bedrock (CONTINUE_USE_BEDROCK detected)"),
     );
     return true;
   }
@@ -102,9 +117,9 @@ export async function runOnboardingFlow(
       const apiKeyEnv = getProviderApiKeyInput(envProvider);
       const apiKey = process.env[apiKeyEnv];
       if (apiKey) {
-        console.log(chalk.blue(`✓ Using ${apiKeyEnv} from environment`));
+        console.log(c.primary(`✓ Using ${apiKeyEnv} from environment`));
         await createOrUpdateConfig(apiKey, envProvider);
-        console.log(chalk.gray(`  Config saved to: ${CONFIG_PATH}`));
+        console.log(c.mutedForeground(`  Config saved to: ${CONFIG_PATH}`));
         return false;
       }
     }
@@ -122,7 +137,7 @@ export async function runOnboardingFlow(
       const updatedContent = updateConfigFromEnvApiKeys(existingContent);
       fs.writeFileSync(CONFIG_PATH, updatedContent);
       setConfigFilePermissions(CONFIG_PATH);
-      console.log(chalk.blue("✓ Updated config from environment API keys"));
+      console.log(c.primary("✓ Updated config from environment API keys"));
       return false;
     }
 
@@ -133,17 +148,17 @@ export async function runOnboardingFlow(
   const apiKeyInput = getProviderApiKeyInput(provider);
 
   console.log(
-    chalk.yellow(
+    c.primary(
       `\nEnter your ${getProviderLabel(provider)} API key (${apiKeyInput}).`,
     ),
   );
 
-  const apiKey = await question(chalk.white("\nAPI key: "));
+  const apiKey = await question(c.white("\nAPI key: "));
   validateProviderApiKey(provider, apiKey);
 
   await createOrUpdateConfig(apiKey, provider);
   console.log(
-    chalk.green(`✓ Config file updated successfully at ${CONFIG_PATH}`),
+    c.primary(`✓ Config file updated successfully at ${CONFIG_PATH}`),
   );
 
   return true;
