@@ -53,6 +53,9 @@ describe("serve command", () => {
         dim: (str: string) => str,
         yellow: (str: string) => str,
         red: (str: string) => str,
+        white: (str: string) => str,
+        gray: (str: string) => str,
+        hex: () => (str: string) => str,
       },
     }));
   });

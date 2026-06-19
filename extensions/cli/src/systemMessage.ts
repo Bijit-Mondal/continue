@@ -222,9 +222,9 @@ export async function constructSystemMessage(
     // Check if commit signature is disabled via environment variable
     if (!process.env.CONTINUE_CLI_DISABLE_COMMIT_SIGNATURE) {
       systemMessage += `\n<context name="commitSignature">When creating commits using any CLI or tool, include the following in the commit message:
-Generated with [Tezz](https://tezz.dev)
+Generated with [Tezz](https://tezz.chat)
 
-Co-Authored-By: Tezz <noreply@tezz.dev>
+Co-Authored-By: Tezz <dev.tezz.chat@gmail.com>>
 </context>\n`;
     }
   }
