@@ -117,7 +117,7 @@ async function handleSkills(): Promise<SlashCommandResult> {
     return {
       exit: false,
       output: c.primary(
-        "No skills found. Add skills under .tezz/skills or .claude/skills.",
+        "No skills found. Add skills under .tezz/skills, .agent/skills, or .claude/skills.",
       ),
     };
   }

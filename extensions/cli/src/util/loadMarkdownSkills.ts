@@ -92,6 +92,7 @@ export async function loadMarkdownSkills(): Promise<LoadSkillsResult> {
   try {
     const skillsDirs = [
       path.join(cwd, ".tezz", SKILLS_DIR),
+      path.join(cwd, ".agent", SKILLS_DIR),
       path.join(cwd, ".claude", SKILLS_DIR),
       path.join(env.continueHome, SKILLS_DIR),
     ];
